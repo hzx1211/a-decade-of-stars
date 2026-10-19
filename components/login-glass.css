@@ -1,0 +1,198 @@
+/* The public entrance uses the archive's clear lens, with code-drawn scenery. */
+.glass-login {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(32px, 7vw, 110px);
+  min-height: 100svh;
+  padding: 36px clamp(28px, 6vw, 100px);
+  color: #f7faff;
+  background: #030d21;
+  --text: #f7faff;
+  --muted: #cfdeef;
+  --accent: #d3edff;
+  --border: #ffffff36;
+  --glass-blur: 3px;
+}
+.glass-login .login-sky {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(ellipse at 91% 84%, #194f9a65, transparent 53%),
+    radial-gradient(ellipse at 6% 86%, #08668b55, transparent 49%),
+    linear-gradient(155deg, #020919, #071733 72%, #091c3b);
+}
+.glass-login .login-sky-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 77% 69%, #3b8bf528, transparent 37%),
+    radial-gradient(ellipse at 32% 93%, #71d8ff1a, transparent 31%);
+  animation: login-light-drift 18s ease-in-out infinite alternate;
+}
+.glass-login .login-sky-orbit {
+  position: absolute;
+  left: -16%;
+  bottom: -22%;
+  width: 150%;
+  height: 58%;
+  border-radius: 50%;
+  border-top: 1px solid #a7d6ff29;
+  box-shadow: 0 -30px 90px -50px #64c9ff70;
+  transform: rotate(-14deg);
+}
+.glass-login .login-sky-star {
+  position: absolute;
+  border-radius: 50%;
+  background: #d2efff;
+  opacity: .5;
+  box-shadow: 0 0 8px 1px #76bfff4d;
+  animation: login-star-pulse 6s ease-in-out infinite alternate;
+}
+.glass-login .login-sky-star:nth-of-type(13n) { box-shadow: 0 0 13px 3px #9ddfff4d; }
+.glass-login .login-meteor {
+  position: absolute;
+  top: 10%;
+  left: 67%;
+  width: 170px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #a8deffb3 85%, #effaff);
+  transform: rotate(-33deg);
+  transform-origin: right center;
+  opacity: 0;
+  animation: login-meteor-pass 15s linear infinite;
+}
+.glass-login .login-meteor::after { content: ""; position: absolute; right: -1px; top: -1px; width: 3px; height: 3px; border-radius: 50%; background: #e9faff; box-shadow: 0 0 9px #a1deff; }
+.glass-login .login-meteor-two { top: 28%; left: 85%; width: 120px; animation-delay: 4.2s; }
+.glass-login .login-meteor-three { top: 17%; left: 34%; width: 100px; animation-delay: 8.5s; }
+
+.glass-login .stage-login-story {
+  position: relative;
+  width: auto;
+  min-height: calc(100svh - 72px);
+  height: auto;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  isolation: auto;
+}
+.glass-login .stage-login-story::before,
+.glass-login .stage-login-story::after { content: none; }
+.glass-login .stage-login-story > .wordmark { align-self: flex-start; z-index: 1; color: #f1f7ff; }
+.glass-login .stage-wordmark small { color: #b3c8df; font-size: var(--type-caption); line-height: 1.4; letter-spacing: .15px; word-break: keep-all; overflow-wrap: normal; }
+.glass-login .stage-login-v {
+  top: 26%;
+  right: -13%;
+  width: 86%;
+  height: 60%;
+  z-index: -1;
+  opacity: .36;
+  filter: drop-shadow(0 20px 75px #0958ff24);
+}
+.glass-login .stage-login-copy { padding: 90px 0 110px; margin: auto 0; }
+.glass-login .stage-login-copy .stage-kicker { color: #b6d5f4; font-size: var(--type-overline); letter-spacing: 1.5px; }
+.glass-login .stage-login-copy h1 { color: #f7faff; font-size: clamp(80px, 8.7vw, 132px); font-weight: 500; letter-spacing: -4px; margin: 28px 0 30px; text-shadow: 0 3px 35px #02091980; }
+.glass-login .stage-login-copy h1 > span { font-family: var(--font-sans); font-size: clamp(16px, 1.5vw, 22px); font-weight: 400; letter-spacing: 7px; margin: 18px 0 0 6px; }
+.glass-login .stage-login-copy > p:not(.stage-kicker) { color: #dfeaf7; font-family: var(--font-serif); font-size: 20px; line-height: 1.95; letter-spacing: 2px; }
+.glass-login .stage-login-copy > span { color: #afc7df; font-size: var(--type-overline); line-height: 1.55; letter-spacing: .5px; margin-top: 36px; }
+
+.glass-login .stage-login-form {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  padding: 32px 0;
+  background: transparent;
+  color: #f7faff;
+  --text: #f7faff;
+  --muted: #cfdeef;
+  --accent: #d3edff;
+  --gold: #d3edff;
+  --surface: #ffffff0a;
+  --border: #ffffff36;
+}
+.glass-login .login-glass-card { position: relative; width: 100%; max-width: 458px; padding: clamp(30px, 3.3vw, 48px); border-radius: 32px; --glass-tint: rgba(255,255,255,.08); }
+.glass-login .ws-login-form { max-width: none; }
+.glass-login .ws-login-lock { width: 46px; height: 46px; border: 1px solid #ffffff45; border-radius: 16px; margin: 0 0 30px; color: #e8f5ff; background: #ffffff0a; box-shadow: inset 0 1px 0 #ffffff47; justify-content: center; }
+.glass-login .ws-login-form h2 { color: #f7faff; font: 500 28px/1.4 var(--font-sans); letter-spacing: -.5px; margin: 0 0 12px; text-shadow: 0 1px 9px #000c2440; }
+.glass-login .ws-login-form > .ws-muted { color: #d1deee; font-size: var(--type-caption); line-height: 1.85; margin-bottom: 30px; }
+.glass-login .ws-login-form .ws-field { color: #dfebf8; font-size: var(--type-ui); gap: 10px; margin-bottom: 22px; }
+.glass-login .ws-login-form .ws-field input { height: 50px; border: 1px solid #ffffff3d; border-radius: 15px; background: #ffffff06; color: #f7faff; -webkit-text-fill-color: #f7faff; color-scheme: dark; font-size: 16px; padding: 13px 15px; box-shadow: inset 0 1px 3px #00061712, 0 1px 0 #ffffff0d; caret-color: #dcf3ff; }
+.glass-login .ws-login-form input::placeholder { color: #b8cbe0; font-size: var(--type-caption); }
+.glass-login .ws-login-form input:focus { background: #ffffff0d; border-color: #c2e7ffc2; box-shadow: 0 0 0 3px #b0dfff12, inset 0 1px 0 #ffffff29; }
+.glass-login .ws-login-form .ws-password > input { padding-right: 52px; }
+.glass-login .ws-password > .ws-icon-button { top: 3px; right: 4px; width: 44px; height: 44px; border-radius: 50%; color: #d2e5f7; background: #ffffff0a; border: 1px solid #ffffff24; box-shadow: inset 0 1px 0 #ffffff20; }
+.glass-login .ws-password > .ws-icon-button:hover { background: #ffffff14; color: #fff; }
+.glass-login .ws-login-form .ws-login-submit { min-height: 50px; border-radius: 28px; border: 1px solid #ffffffc2; color: #152a40; background: linear-gradient(135deg, #fffffff0, #ffffffb8); box-shadow: inset 0 1px 0 #fff, 0 5px 20px #00061726; margin: 8px 0 21px; font-size: var(--type-ui); font-weight: 500; }
+.glass-login .ws-login-submit:not(:disabled):hover { background: #ffffffed; box-shadow: inset 0 1px 0 #fff, 0 8px 24px #00061738; }
+.glass-login .ws-login-form > .ws-tiny { font-size: var(--type-caption); line-height: 1.8; color: #c3d4e6; }
+.glass-login .ws-login-form > .ws-tiny a { display: inline-flex; align-items: center; min-height: 44px; color: #ecf7ff; text-underline-offset: 4px; }
+.glass-login .ws-login-form > .ws-tiny a:hover { text-decoration: underline; }
+.glass-login .ws-error { color: #ffd2db; background: #d87d970f; border-color: #f6bdcc; border-radius: 0 10px 10px 0; }
+.glass-login .login-legal { margin-top: 26px; max-width: 100%; flex-wrap: wrap; justify-content: center; align-items: center; color: #b8cfe6; font-size: 14px; gap: 10px; }
+.glass-login .login-legal a { display: inline-flex; justify-content: center; align-items: center; min-height: 44px; padding: 10px 14px; border: 1px solid #d2e8ff30; border-radius: 24px; color: #dcecff; background: #ffffff06; line-height: 1.5; }
+.glass-login .login-legal a:hover { color: #fff; background: #ffffff14; border-color: #d2e8ff70; translate: 0 -2px; }
+.glass-login .login-legal a:active { scale: .98; }
+.glass-login :is(a, button, input):focus-visible { outline: 2px solid #d0ecff; outline-offset: 4px; }
+/* Chromium owns the autofill background. Paint over it inside the field;
+   this rule must also outrank our normal and focused input shadows. */
+.glass-login .ws-login-form .ws-field input:is(:autofill, :-webkit-autofill) {
+  color: #f7faff !important;
+  -webkit-text-fill-color: #f7faff !important;
+  caret-color: #dcf3ff;
+  -webkit-box-shadow: inset 0 0 0 1000px #23334d !important;
+  box-shadow: inset 0 0 0 1000px #23334d !important;
+  transition: border-color var(--motion-state), outline-color var(--motion-state), opacity var(--motion-quick);
+}
+
+@keyframes login-star-pulse { from { opacity: .22; scale: .8; } to { opacity: .85; scale: 1.18; } }
+@keyframes login-light-drift { from { translate: -2% 1%; opacity: .65; } to { translate: 2% -1%; opacity: 1; } }
+@keyframes login-meteor-pass {
+  0%, 2% { opacity: 0; translate: 0 0; }
+  5% { opacity: .75; }
+  13% { opacity: 0; translate: -340px 220px; }
+  100% { opacity: 0; translate: -340px 220px; }
+}
+@media (max-width: 1000px) and (min-width: 801px) {
+  .glass-login { gap: 24px; padding-inline: 32px; }
+  .glass-login .login-glass-card { padding: 32px 28px; }
+  .glass-login .ws-login-form h2 { font-size: 25px; }
+}
+@media (max-width: 800px) {
+  .glass-login { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 26px 24px 28px; }
+  .glass-login .stage-login-story { width: 100%; height: auto; min-height: 0; padding: 0; overflow: hidden; }
+  .glass-login .stage-login-story > .wordmark { gap: 12px; }
+  .glass-login .stage-login-story .wordmark > svg { width: 38px; height: 38px; }
+  .glass-login .stage-login-story .wordmark > span { flex: 1 1 auto; min-width: 0; max-width: 100%; font-size: 22px; }
+  .glass-login .stage-login-story .wordmark > span small { display: block; max-width: min(100%, 222px); white-space: normal; text-wrap: pretty; }
+  .glass-login .stage-login-copy { margin: 0; padding: 35px 0 27px; }
+  .glass-login .stage-login-copy .stage-kicker { display: none; }
+  .glass-login .stage-login-copy h1 { font-size: 58px; letter-spacing: -2px; margin: 0 0 17px; }
+  .glass-login .stage-login-copy h1 > span { font-size: var(--type-overline); letter-spacing: 2px; margin: 10px 0 0 2px; }
+  .glass-login .stage-login-copy > p:not(.stage-kicker) { font-size: var(--type-body); line-height: 1.8; letter-spacing: .5px; }
+  .glass-login .stage-login-copy > p br { display: none; }
+  .glass-login .stage-login-copy > span { position: static; display: block; max-width: 100%; writing-mode: horizontal-tb; margin-top: 14px; font-size: var(--type-overline); letter-spacing: .35px; }
+  .glass-login .stage-login-v { top: 18%; right: -3%; width: 49%; height: 73%; opacity: .45; }
+  .glass-login .stage-login-form { padding: 0; }
+  .glass-login .login-glass-card { max-width: 458px; padding: 30px 27px; border-radius: 28px; --glass-edge-width: 5px; }
+  .glass-login .ws-login-lock { width: 40px; height: 40px; margin-bottom: 22px; border-radius: 14px; }
+  .glass-login .ws-login-form h2 { font-size: 25px; }
+  .glass-login .ws-login-form > .ws-muted { font-size: var(--type-caption); margin-bottom: 25px; }
+  .glass-login .ws-login-form .ws-field { margin-bottom: 18px; }
+  .glass-login .login-legal { margin-top: 23px; }
+  .glass-login .login-meteor { width: 110px; }
+}
+@media (max-width: 360px) {
+  .glass-login { padding-inline: 20px; }
+  .glass-login .stage-login-story > .wordmark { gap: 9px; }
+  .glass-login .stage-login-story .wordmark > svg { width: 34px; height: 34px; flex: 0 0 34px; }
+  .glass-login .stage-login-story .wordmark > span { flex: 1 1 auto; min-width: 0; font-size: 20px; }
+  .glass-login .stage-login-story .wordmark > span small { max-width: min(100%, 214px); font-size: var(--type-caption); letter-spacing: .15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glass-login .login-sky * { animation: none !important; }
+}
+html[data-motion="off"] .glass-login .login-sky * { animation: none !important; }

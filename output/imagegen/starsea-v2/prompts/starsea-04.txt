@@ -1,0 +1,5 @@
+Use case: lighting-weather
+Asset type: fourth keyframe of a seamless blue concert-light-sea website background loop.
+Input image 1 is the first keyframe and the exact composition to preserve.
+Change only the illumination: let the existing curved cobalt light wave settle into a finely sparkling glow, close to the first frame's brightness, with a soft ice-blue echo at the far horizon. Ease the existing side diffraction stars back to their original intensity so that a crossfade back to input image 1 feels continuous. Keep the lower sea visibly luminous and preserve the dark-blue upper-center reading area.
+Preserve exactly the camera, horizon position, geometry, existing light-point and star positions, color family and crop. No new objects or camera movement. No purple, pink, gold, red, text, symbols, logos, V mark, people or watermark.

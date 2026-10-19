@@ -1,0 +1,126 @@
+.stage-site .galaxy-view { --galaxy-ink: #edf7ff; --galaxy-muted: #a5bbd4; }
+.stage-site .galaxy-toolbar { align-items: center; margin-bottom: 24px; }
+.stage-site .galaxy-toolbar > select { flex: 0 1 205px; border-radius: 24px; min-height: 44px; }
+.stage-site .galaxy-toolbar > .ws-button:last-child { margin-left: auto; }
+.stage-site .galaxy-view .galaxy-picker-trigger { gap: 8px; }
+.galaxy-selection-count { display: grid; place-items: center; min-width: 22px; padding: 0 5px; border-radius: 7px; background: #c2e4ff10; color: #d6edff; font-size: 12px; font-variant-numeric: tabular-nums; }
+.stage-site .galaxy-view .ws-star-layout { gap: 22px; }
+.stage-site .galaxy-view .ws-star-picker { border-radius: 24px; padding: 25px 22px; }
+.stage-site .galaxy-view .ws-star-picker header { margin-bottom: 24px; }
+.stage-site .galaxy-view .ws-star-picker h3 { font-size: 24px; }
+.stage-site .galaxy-view .ws-star-picker .ws-selection-list { max-height: 570px; }
+.stage-site .galaxy-view .ws-star-picker .ws-check { align-items: flex-start; }
+.stage-site .galaxy-view .ws-star-picker .ws-check > span { min-width: 0; overflow-wrap: anywhere; }
+.stage-site .galaxy-view .galaxy-stage { position: relative; isolation: isolate; width: 100%; min-width: 0; aspect-ratio: 1200 / 760; min-height: 470px; max-height: 830px; margin: 0; border: 1px solid #bfdfff24; border-radius: 28px; overflow: hidden; background: #020714; box-shadow: 0 24px 70px -28px #000a; cursor: grab; touch-action: pan-y; user-select: none; }
+.stage-site .galaxy-view .galaxy-stage::after { content: none; }
+.stage-site .galaxy-view .galaxy-stage { container-type: inline-size; }
+.stage-site .galaxy-view .galaxy-stage { border-color: color-mix(in srgb,var(--galaxy-accent),transparent 84%); transition: border-color .82s, box-shadow .82s; }
+.stage-site .galaxy-stage.is-dragging { cursor: grabbing; }
+.galaxy-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.galaxy-universe { position: absolute; inset: 0; }
+.galaxy-stage-heading { position: absolute; z-index: 3; inset: 30px 32px auto; display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; pointer-events: none; }
+.galaxy-stage-heading > div { display: flex; flex-direction: column; gap: 9px; }
+.galaxy-stage-heading > div > span { color: #99b9dc; font-size: 11px; font-weight: 500; letter-spacing: 3.5px; }
+.galaxy-stage-heading strong { color: #e2efff; font-size: 18px; font-weight: 400; letter-spacing: 2px; }
+.galaxy-theme-identity { display: flex; flex-direction: column; gap: 9px; }
+.galaxy-theme-eyebrow { color: var(--galaxy-accent); font-size: 11px; font-weight: 500; letter-spacing: 3.5px; }
+.galaxy-theme-category { color: #99b9dc; font-size: 12px; letter-spacing: .6px; }
+.galaxy-live-indicator { display: flex; align-items: center; gap: 9px; color: #bed3ea; font-size: 13px; white-space: nowrap; }
+.galaxy-live-indicator i { width: 5px; height: 5px; border-radius: 50%; background: #bce8ff; box-shadow: 0 0 10px #91ceff; }
+.galaxy-live-indicator i { background: var(--galaxy-accent); box-shadow: 0 0 10px var(--galaxy-accent); transition: background-color .82s, box-shadow .82s; }
+.galaxy-record-layer { position: absolute; inset: 0; pointer-events: none; }
+.galaxy-node-position { position: absolute; z-index: 2; width: 0; height: 0; }
+.galaxy-node-position:has(:hover), .galaxy-node-position:has(:focus-visible) { z-index: 5; }
+.galaxy-record { position: absolute; width: 44px; height: 44px; top: -22px; left: -22px; border: 0; border-radius: 50%; padding: 0; color: #e8f6ff; background: transparent; cursor: pointer; pointer-events: auto; outline-offset: 3px; -webkit-tap-highlight-color: transparent; }
+.galaxy-record::before { content: ""; position: absolute; inset: 3px; border-radius: 50%; border: 1px solid #d3eeff00; background: radial-gradient(circle,#9bdcff15,transparent 70%); transition: border-color .25s, background-color .25s, transform .25s; }
+.galaxy-record:hover::before, .galaxy-record:focus-visible::before { border-color: #d3eeff80; background-color: #8ccaff14; transform: scale(1.12); }
+.galaxy-record:active::before { transform: scale(.94); }
+.galaxy-record:focus-visible { outline: 1px solid #e2f4ff; }
+.galaxy-record-spark { position: absolute; width: 5px; height: 5px; top: 19.5px; left: 19.5px; border-radius: 50%; background: #f3faff; box-shadow: 0 0 5px 1px #d7f4ff, 0 0 16px 4px #63b4ff80, 0 0 30px 9px #3e8dff24; transition: transform .25s, box-shadow .25s; }
+.galaxy-record.is-favorite .galaxy-record-spark { width: 6px; height: 6px; top: 19px; left: 19px; background: #b8eaff; box-shadow: 0 0 6px 2px #b9e7ff, 0 0 23px 6px #4f9eff85, 0 0 40px 12px #2c6aff30; }
+.galaxy-record .galaxy-record-spark { box-shadow: 0 0 5px 1px #d7f4ff,0 0 16px 4px color-mix(in srgb,var(--galaxy-accent),transparent 50%),0 0 30px 9px color-mix(in srgb,var(--galaxy-secondary),transparent 86%); }
+.galaxy-record.is-favorite .galaxy-record-spark { background: var(--galaxy-accent); box-shadow: 0 0 6px 2px color-mix(in srgb,var(--galaxy-accent),#fff 35%),0 0 23px 6px color-mix(in srgb,var(--galaxy-accent),transparent 48%),0 0 40px 12px color-mix(in srgb,var(--galaxy-secondary),transparent 82%); }
+.galaxy-record-spark i { position: absolute; inset: 50% auto auto 50%; transform: translate(-50%,-50%); background: linear-gradient(transparent,#effbffbb,transparent); width: 1px; height: 20px; }
+.galaxy-record-spark i + i { transform: translate(-50%,-50%) rotate(90deg); height: 14px; }
+.galaxy-record:hover .galaxy-record-spark, .galaxy-record:focus-visible .galaxy-record-spark { transform: scale(1.3); }
+.galaxy-record-label { position: absolute; left: 37px; top: 8px; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 2px 10px; min-width: 108px; max-width: 190px; padding: 8px 11px; border: 1px solid #b5d7ff24; border-radius: 10px; text-align: left; white-space: nowrap; background: linear-gradient(120deg,#14253be6,#071329ce); box-shadow: 0 4px 18px #0005; opacity: 0; transform: translateX(-5px); pointer-events: none; transition: opacity .22s, transform .22s, border-color .22s; }
+.galaxy-record-label small { grid-column: 1 / -1; color: #98b7d5; font-size: 10px; line-height: 1.5; }
+.galaxy-record-label strong { overflow: hidden; text-overflow: ellipsis; font-size: 13px; font-weight: 400; line-height: 1.6; }
+.galaxy-record-label svg { color: #afcee9; }
+.galaxy-record.is-prominent .galaxy-record-label { opacity: .8; transform: none; pointer-events: auto; }
+.galaxy-record:hover .galaxy-record-label, .galaxy-record:focus-visible .galaxy-record-label { opacity: 1; transform: translateX(3px); border-color: #b5d7ff70; pointer-events: auto; }
+.galaxy-record-number { position: absolute; top: 31px; left: 16px; color: #b5d7f2; font-size: 9px; font-variant-numeric: tabular-nums; opacity: .7; }
+.galaxy-stage-bottom { position: absolute; z-index: 6; bottom: 24px; left: 30px; right: 24px; display: flex; justify-content: space-between; align-items: center; gap: 16px; pointer-events: none; }
+.galaxy-drag-hint { color: #94abc6; font-size: 12px; letter-spacing: .5px; }
+.galaxy-view-controls { display: flex; align-items: center; gap: 1px; border: 1px solid #c4dfff30; padding: 4px; border-radius: 24px; color: #d5eaff; background: #17283c94; backdrop-filter: blur(12px); box-shadow: inset 0 1px 0 #ffffff14; pointer-events: auto; }
+.galaxy-view-controls button { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; padding: 0; color: inherit; background: transparent; border: 0; cursor: pointer; transition: background-color .2s, transform .2s, color .2s; }
+.galaxy-view-controls button:hover { color: #fff; background: #ffffff18; transform: scale(1.05); }
+.galaxy-view-controls button:active { transform: scale(.93); }
+.galaxy-view-controls button:disabled { opacity: .35; cursor: default; transform: none; }
+.galaxy-view-controls button:focus-visible { outline: 2px solid #c0eaff; outline-offset: -2px; }
+.galaxy-view-controls output { min-width: 42px; text-align: center; font-size: 11px; font-variant-numeric: tabular-nums; }
+.galaxy-view-controls > span { width: 1px; height: 16px; background: #d0e6ff28; margin: 0 5px; }
+.stage-site .galaxy-view .galaxy-record-browser { display: block; margin: 24px 0 0; }
+.galaxy-record-browser header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
+.galaxy-record-browser header > div { display: grid; gap: 6px; }
+.galaxy-record-browser header .ws-eyebrow { color: #91aac9; font-size: 10px; letter-spacing: 2px; }
+.galaxy-record-browser header strong { color: #d9eaff; font-size: 18px; font-weight: 400; }
+.galaxy-record-browser header > span { color: #9fb6d1; font-size: 13px; }
+.stage-site .galaxy-record-browser .secondary-star-mobile-list { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 0 24px; padding: 0; }
+.stage-site .galaxy-record-browser .secondary-star-mobile-list > button { display: flex; align-items: center; gap: 13px; width: 100%; min-width: 0; padding: 18px 0; min-height: 72px; border: 0; border-bottom: 1px solid #a6c7ec20; border-radius: 0; text-align: left; background: transparent; color: #d3e6fc; cursor: pointer; transition: border-color .2s, background-color .2s, padding .2s; }
+.stage-site .galaxy-record-browser .secondary-star-mobile-list > button:hover { background: #b3d4ff06; border-color: #a6c7ec66; padding-left: 5px; }
+.stage-site .galaxy-record-browser .secondary-star-mobile-list > button:active { background: #b3d4ff0c; }
+.stage-site .galaxy-record-browser .secondary-star-mobile-list > button:focus-visible { outline: 2px solid #b5ddff; outline-offset: 2px; }
+.galaxy-record-browser .secondary-star-mobile-index { flex-shrink: 0; color: #8db0d6; font-size: 12px; font-variant-numeric: tabular-nums; }
+.galaxy-record-browser .secondary-star-mobile-index.is-favorite { color: #c2e7ff; }
+.galaxy-record-browser .secondary-star-mobile-copy { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
+.galaxy-record-browser .secondary-star-mobile-copy strong { color: #e1eeff; font-size: 14px; font-weight: 400; line-height: 1.6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.galaxy-record-browser .secondary-star-mobile-copy small { color: #9ab1cd; font-size: 12px; }
+.galaxy-record-browser button > svg { flex-shrink: 0; width: 14px; color: #92b7df; }
+.galaxy-empty { color: #b6cbe2; text-align: center; margin-top: 22px; font-size: 14px; }
+@media (max-width: 1100px) {
+  .stage-site .galaxy-record-browser .secondary-star-mobile-list { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .galaxy-stage-heading { inset: 24px 24px auto; }
+  .galaxy-drag-hint { display: none; }
+  .galaxy-stage-bottom { justify-content: flex-end; }
+  .galaxy-record.is-prominent .galaxy-record-label { opacity: 0; pointer-events: none; }
+  .galaxy-record:hover .galaxy-record-label, .galaxy-record:focus-visible .galaxy-record-label { opacity: 1; }
+}
+@media (max-width: 700px) {
+  .stage-site .galaxy-view .galaxy-toolbar { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; margin-bottom: 18px; }
+  .stage-site .galaxy-toolbar > select, .stage-site .galaxy-toolbar > .ws-button { width: 100%; min-width: 0; margin: 0; font-size: 13px; }
+  .stage-site .galaxy-view .galaxy-stage { aspect-ratio: 1 / 1.25; min-height: 420px; max-height: 650px; border-radius: 22px; }
+  .galaxy-universe { width: 140%; height: 100%; max-width: none; left: -20%; right: auto; bottom: auto; transition: width .82s cubic-bezier(.22,1,.36,1), height .82s cubic-bezier(.22,1,.36,1), left .82s cubic-bezier(.22,1,.36,1), top .82s cubic-bezier(.22,1,.36,1), transform .82s cubic-bezier(.22,1,.36,1); }
+  .galaxy-stage[data-galaxy-theme="concerts"] .galaxy-universe { width: 160%; height: 101.3333cqw; left: -30%; top: 47%; transform: translateY(-43%); mask-image: linear-gradient(transparent, #000 11%, #000 89%, transparent); }
+  .galaxy-stage[data-galaxy-theme="concerts"] .galaxy-stage-heading { align-items: center; gap: 7px; text-align: center; }
+  .galaxy-stage[data-galaxy-theme="concerts"] .galaxy-theme-identity { align-items: center; }
+  .galaxy-stage[data-galaxy-theme="concerts"] .galaxy-theme-category { display: none; }
+  .galaxy-stage-heading { inset: 22px 20px auto; flex-direction: column; gap: 13px; }
+  .galaxy-stage-heading > div > span { font-size: 9px; letter-spacing: 2.7px; }
+  .galaxy-theme-eyebrow { font-size: 9px; letter-spacing: 2.7px; }
+  .galaxy-theme-identity { gap: 7px; }
+  .galaxy-theme-category { font-size: 11px; }
+  .galaxy-stage-heading strong { font-size: 16px; letter-spacing: 1px; }
+  .galaxy-live-indicator { font-size: 11px; }
+  .galaxy-stage-bottom { left: 16px; right: 16px; bottom: 18px; justify-content: center; }
+  .galaxy-view-controls button { width: 38px; height: 38px; }
+  .galaxy-record-label { left: 10px; top: 39px; min-width: 90px; max-width: 145px; }
+  .galaxy-record-number { font-size: 10px; }
+  .stage-site .galaxy-view .galaxy-record-browser { margin-top: 24px; }
+  .galaxy-record-browser header { margin-bottom: 12px; }
+  .galaxy-record-browser header strong { font-size: 17px; }
+  .galaxy-record-browser header > span { font-size: 12px; }
+  .stage-site .galaxy-record-browser .secondary-star-mobile-list { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 16px; overflow: visible; }
+  .stage-site .galaxy-record-browser .secondary-star-mobile-list > button { flex: auto; min-height: 75px; padding: 14px 0; gap: 10px; }
+  .galaxy-record-browser .secondary-star-mobile-copy strong { font-size: 13px; }
+  .galaxy-record-browser .secondary-star-mobile-copy small { font-size: 11px; }
+  .galaxy-record-browser .secondary-star-mobile-index { font-size: 11px; }
+}
+@media (max-width: 380px) {
+  .stage-site .galaxy-view .galaxy-picker-trigger { gap: 5px; padding-inline: 8px; white-space: nowrap; }
+  .galaxy-selection-count { min-width: 19px; padding-inline: 3px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .galaxy-view *, .galaxy-view *::before, .galaxy-view *::after { animation: none !important; transition-duration: 0s !important; }
+}
+.no-animation .galaxy-view *, .no-animation .galaxy-view *::before, .no-animation .galaxy-view *::after { animation: none !important; transition-duration: 0s !important; }

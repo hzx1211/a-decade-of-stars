@@ -1,0 +1,15 @@
+node_modules/
+.next/
+.data/
+.env*
+!.env.example
+*.tsbuildinfo
+test-results/
+playwright-report/
+shared-conversation*
+*-docs.html
+verification/
+.npm-cache/
+.test-data/
+.next-test*/
+verification-*.html

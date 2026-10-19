@@ -1,0 +1,50 @@
+.stage-site .ws-modal:has(> .ws-modal-body > .media-importer) { width: min(620px,100%); padding: 27px 30px 24px; border-radius: 18px; color: var(--glass-ink,#f1f7ff); scrollbar-color: #afc8e3 #ffffff0a; }
+.stage-site .ws-modal:has(> .ws-modal-body > .media-importer) .ws-modal-head { padding-bottom: 0; margin-bottom: 8px; border: 0; }
+.stage-site .ws-modal:has(> .ws-modal-body > .media-importer) .ws-modal-head h2 { color: var(--glass-ink,#f1f7ff); font: 500 19px/1.6 var(--font-sans,sans-serif); }
+.stage-site .media-importer { --text:var(--glass-ink,#f1f7ff); --muted:var(--glass-muted,#d0dce9); --border:#d5e7fa2e; --accent:var(--glass-blue,#cce9ff); color:var(--glass-ink,#f1f7ff); color-scheme:dark; }
+.stage-site .media-import-intro { color: var(--glass-muted,#d0dce9); font-size: var(--type-caption); margin: 0 0 22px; }
+.stage-site .media-import-drop { display: block; position: relative; min-width: 0; border: 1px dashed #c1e2ff59; border-radius: 13px; background: #ffffff0d; padding: 25px 18px; cursor: pointer; transition: border-color .2s,background .2s,transform .2s,box-shadow .2s; }
+.stage-site .media-import-drop:hover,.stage-site .media-import-drop.is-dragging { border-color: #b7ddff; background-color: #ffffff1a; box-shadow: inset 0 0 25px #ffffff0d; }
+.stage-site .media-import-drop:active { transform: scale(.99); }
+.stage-site .media-import-drop:focus-within { outline: 2px solid #b7ddff; outline-offset: 4px; }
+.stage-site .media-import-drop.is-locked { cursor: default; }
+.stage-site .media-import-drop.is-locked:active { transform: none; }
+.stage-site .media-import-drop input { position:absolute; clip-path:inset(50%); width:1px; height:1px; overflow:hidden; white-space:nowrap; }
+.stage-site .media-import-file { display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; min-width:0; }
+.stage-site .media-import-file-icon { display:grid; place-items:center; color:#ceeaff; width:52px; height:52px; border:1px solid #ffffff40; border-radius:50%; background:#ffffff0f; margin-bottom:3px; }
+.stage-site .media-import-file strong { max-width:100%; color:var(--glass-ink,#f1f7ff); font-size: var(--type-body); line-height:1.7; font-weight:500; overflow-wrap:anywhere; }
+.stage-site .media-import-file > span:last-child { color:#c2d3e6; font-size: var(--type-caption); line-height:1.9; overflow-wrap:anywhere; }
+.stage-site .media-import-fields { padding-top:22px; }
+.stage-site .media-importer .ws-field { display:flex; flex-direction:column; gap:7px; margin-bottom:16px; color:#d6e3f1; font-size: var(--type-ui); }
+.stage-site .media-importer .ws-field :is(input,textarea) { width:100%; min-width:0; color:var(--glass-ink,#f1f7ff); border:1px solid #d5e7fa2e; border-radius:8px; padding:10px 12px; font-size: var(--type-body); line-height:1.7; background:#ffffff12; transition:border-color .2s,box-shadow .2s; }
+.stage-site .media-importer .ws-field :is(input,textarea)::placeholder { color:#b4c7dd; opacity:1; }
+.stage-site .media-importer .ws-field :is(input,textarea):focus { outline:none; border-color:#b7ddff; box-shadow:0 0 0 3px #82bfff21; }
+.stage-site .media-importer .ws-field :is(input,textarea):disabled { opacity:.7; }
+.stage-site .media-import-progress { display:grid; gap:9px; padding:18px 0 2px; color:#d1e6ff; font-size: var(--type-caption); }
+.stage-site .media-import-progress progress { display:block; width:100%; height:5px; border:0; border-radius:8px; overflow:hidden; appearance:none; background:#d2e5fa26; }
+.stage-site .media-import-progress progress::-webkit-progress-bar { background:#d2e5fa26; }
+.stage-site .media-import-progress progress::-webkit-progress-value { border-radius:8px; background:linear-gradient(90deg,#76baff,#b2deff); transition:width .2s; }
+.stage-site .media-import-progress progress::-moz-progress-bar { background:#9ed3ff; }
+.stage-site .media-import-progress-hint { color:#c2d3e6; font-size: var(--type-caption); }
+.stage-site .media-import-retained { display:flex; align-items:flex-start; gap:8px; color:#bcebd7; font-size: var(--type-caption); line-height:1.8; margin:8px 0 0; }
+.stage-site .media-import-retained svg { flex-shrink:0; margin-top:2px; }
+.stage-site .media-import-error { margin:17px 0 0; color:#ffc1cf; background:#d66f8714; border-color:#f7a0b452; font-size: var(--type-caption); line-height:1.8; overflow-wrap:anywhere; }
+.stage-site .media-import-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-top:23px; padding-top:19px; border-top:1px solid #d5e7fa2e; }
+.stage-site .media-import-footer > p { color:#c2d3e6; font-size: var(--type-caption); margin:0; }
+.stage-site .media-import-footer .ws-actions { gap:8px; margin-left:auto; }
+.stage-site .media-importer .ws-button { min-height: 44px; padding:9px 13px; border-radius:8px; font-size: var(--type-ui); }
+.stage-site .media-importer .ws-button:not(.ws-button-secondary):not(.ws-button-ghost):not(.ws-button-danger) { color:#f1f7ff; background:#387fd85c; border-color:#b4dcff66; }
+.stage-site .media-importer .ws-button:not(.ws-button-secondary):not(.ws-button-ghost):not(.ws-button-danger):hover { color:#fff; background:#438ce67a; border-color:#d0eaff99; }
+.stage-site .media-importer .ws-button-ghost { color:#d1e6ff; }
+.stage-site .media-importer .ws-button-ghost:hover { color:var(--glass-ink,#f1f7ff); background:#ffffff0f; }
+.stage-site .media-importer .ws-button:disabled { opacity:.55; }
+@media(max-width:640px) {
+  .stage-site .ws-modal:has(> .ws-modal-body > .media-importer) { padding:23px 19px 20px; border-radius:14px; }
+  .stage-site .media-import-drop { padding:22px 14px; }
+  .stage-site .media-import-file strong { font-size: var(--type-body); }
+  .stage-site .media-importer .ws-field :is(input,textarea) { font-size: var(--type-body); }
+  .stage-site .media-import-footer { gap:12px; }
+  .stage-site .media-import-footer .ws-actions { width:100%; justify-content:flex-end; }
+  .stage-site .media-importer .ws-button { padding:9px 11px; font-size: var(--type-ui); }
+}
+@media(prefers-reduced-motion:reduce) { .stage-site .media-importer * { transition-duration:0s!important; animation-duration:0s!important; } }

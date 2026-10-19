@@ -1,0 +1,49 @@
+{
+  "verifiedOn": "2026-10-09",
+  "timezone": "Asia/Shanghai",
+  "scope": "Local SQLite implementation, browser workflows, PostgreSQL migration with modeled Auth/Storage schemas",
+  "checks": {
+    "typecheck": "passed",
+    "eslint": "passed",
+    "productionBuild": "passed",
+    "vitest": {"passed": 21, "failed": 0, "inputValidation": 4, "postgresqlMigration": 9, "componentInteractionAndPrivacy": 2, "originAndLocalSetup": 6},
+    "playwright": {"passed": 9, "failed": 0, "apiIntegration": 7, "desktopWorkflow": 1, "mobileWorkflow": 1, "durationSeconds": 52.7},
+    "productionLocalOriginRegression": {"passed": 1, "failed": 0, "port": 3002, "appOrigin": "unset", "durationSeconds": 6.4, "checks": ["browser first-owner setup", "server SQLite session creation and invalidation", "logout and login", "missing, hostile, alias-mismatched and wrong-port Origin rejection", "desktop and Pixel 7 layout"]},
+    "actualMediaPlayback": {"wav": "time advanced, pause and seek passed", "webmVp8": "time advanced, pause and seek passed"},
+    "actualSqlitePersistence": "Independent read-only database connection confirmed the restored row on disk",
+    "printExport": {"format": "PDF", "pages": 3, "pageSize": "A4", "allPagesRenderedWith": "Poppler", "visualReview": "passed", "content": "Original test fixtures and only the two explicitly selected records"},
+    "localPasswordResetCli": "Independent test database: hidden double input, scrypt hash, snapshot, session invalidation",
+    "productionReadOnly": {"port": 3000, "ownerSetupRequired": true, "privateApiUnauthenticatedStatus": 401, "privatePageRedirect": "/login", "desktopAndMobileHorizontalOverflow": false, "chromeSameOriginInvalidInputStatus": {"127.0.0.1": 400, "localhost": 400}, "crossOriginStatus": 403, "wrongPortOriginStatus": 403}
+  },
+  "unverified": [
+    "Live Supabase Auth, recovery emails, Storage networking and Data API integration",
+    "Actual Supabase subscription and hosting upload limits",
+    "External official-player availability, geographic or login restrictions",
+    "Public deployment and custom HTTPS domain"
+  ],
+  "limitations": [
+    "JSON backups exclude media file bytes",
+    "Large multipart uploads are size-bounded but parsed in server memory; no TUS/resumable upload or transcoding",
+    "SQLite mode requires persistent single-instance local disk",
+    "Cloud migration is configured separately; switching DATA_MODE does not migrate existing local files",
+    "PostgreSQL tests execute the migration in PGlite with modeled auth/storage schemas and are not live Supabase tests"
+  ],
+  "evidenceDirectory": "verification",
+  "testDataDirectory": ".test-data (isolated; production .data untouched by test writes)",
+  "concertDesignVerification": {
+    "verifiedOn": "2026-10-10",
+    "typecheck": "passed",
+    "eslint": "passed",
+    "productionBuild": "passed",
+    "vitestPassed": 21,
+    "playwrightPassed": 9,
+    "playwrightDurationSeconds": 51.3,
+    "productionRegressionPassed": 1,
+    "productionRegressionDurationSeconds": 8.7,
+    "portrait": {"photographer": "Twinklestellar", "license": "CC BY-SA 4.0", "attribution": "assets/licensed/ATTRIBUTION.md", "anonymousGetAndHead": 401, "forgedSessionGet": 401, "publicStaticPath": 404, "actualBrowserDecode": "passed", "deploymentTraceContainsPhoto": true, "deploymentTraceContainsPrivateData": false},
+    "settings": ["desktop and mobile image override", "crop position persistence", "return to built-in portrait", "paper theme rendering"],
+    "desktopAndMobileVisualReview": "passed",
+    "formalDataPreserved": true,
+    "screenshots": ["verification/concert-desktop.png", "verification/concert-mobile.png", "verification/concert-paper.png", "verification/concert-landing.png", "verification/concert-login.png"]
+  }
+}

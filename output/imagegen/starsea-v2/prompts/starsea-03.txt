@@ -1,0 +1,5 @@
+Use case: lighting-weather
+Asset type: third keyframe of the same blue concert-light-sea website background.
+Input image 1 is the first keyframe and the exact composition to preserve.
+Change only the illumination: the existing lower-edge and side diffraction stars briefly reach their most beautiful ice-blue radiance; a soft band of luminous cobalt travels through the existing curved sea at mid-to-lower depth. Preserve tiny crisp cores surrounded by delicate optical bloom. Keep existing side shafts airy, blue and elegant, and leave the central upper reading area deep navy.
+Preserve exactly the camera, horizon position, spatial geometry, existing light-point positions, star positions, color family and crop. Do not add new stars or new objects. Avoid excessive white coverage. This is the luminous peak of a calm cinematic loop, not a strobe. No purple, pink, gold, red, text, symbols, logos, V mark, people or watermark.

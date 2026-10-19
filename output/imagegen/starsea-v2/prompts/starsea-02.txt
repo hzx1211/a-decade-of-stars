@@ -1,0 +1,5 @@
+Use case: lighting-weather
+Asset type: second keyframe of the same blue concert-light-sea website background.
+Input image 1 is the first keyframe and the exact composition to preserve.
+Change only the illumination: the broad curved blue light wave across the lower half gently crests, its electric-blue glow grows richer and extends toward the lower sides; tiny ice-white light cores become a little more radiant. Slightly illuminate the existing side shafts. Keep the upper central reading area midnight blue with subtle atmosphere.
+Preserve exactly the camera, horizon position, spatial geometry, existing light-point positions, star positions, color family and crop. Do not add or remove objects. Keep light waves continuous with image 1. The increase is lyrical and detailed, not a screen-wide flash. No violet, red, text, symbols, logos, V mark, people or watermark.

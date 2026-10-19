@@ -1,0 +1,20 @@
+.starsea-backdrop { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; contain: strict; isolation: isolate; background: #020b20; }
+.starsea-backdrop::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 98% 26%, #1254bb4f, transparent 44%), radial-gradient(ellipse at 1% 48%, #075ea33d, transparent 43%), linear-gradient(180deg, #02102600 36%, #071e4940 76%, #030d2110); }
+.starsea-image-frames { position: absolute; inset: 0; isolation: isolate; }
+.starsea-frame-layer { position: absolute; inset: 0; background-position: center; background-size: cover; background-repeat: no-repeat; opacity: 0; filter: saturate(1.12) brightness(.81); will-change: opacity; }
+.starsea-blue-horizon { position: absolute; width: 150%; height: 68%; left: -25%; top: 34%; border-radius: 50%; background: radial-gradient(ellipse at 15% 51%, #078ec952, transparent 47%), radial-gradient(ellipse at 85% 43%, #126cff57, transparent 45%), radial-gradient(ellipse at 52% 94%, #17499345, transparent 60%); transform-origin: 50% 70%; animation: starsea-horizon 18s ease-in-out infinite alternate; }
+.starsea-light-current { position: absolute; inset: -6%; opacity: .8; background: radial-gradient(ellipse at 1% 72%, #078bcc4d, transparent 33%), radial-gradient(ellipse at 99% 57%, #126bff57, transparent 32%), radial-gradient(ellipse at 54% 104%, #1146a62e, transparent 44%); animation: starsea-current 22s ease-in-out infinite alternate; }
+.starsea-stage-shafts { position: absolute; inset: -18% -28% -10%; background: conic-gradient(from 146deg at 74% -8%, transparent 0deg, #79dfff00 9deg, #4cbaff0d 13deg, #8ceaff05 16deg, transparent 20deg 32deg, #2f9eff0e 37deg, transparent 44deg 360deg), conic-gradient(from 192deg at 18% -8%, transparent 0deg 11deg, #68caff08 16deg, transparent 23deg 360deg); transform-origin: 50% 0%; animation: starsea-shafts 28s ease-in-out infinite alternate; }
+.starsea-audience { display: block; width: 100%; height: 100%; position: absolute; inset: 0; }
+/* Side light remains visible around the liquid glass; the reading column stays calm. */
+.starsea-readability-veil { position: absolute; inset: 0; background: linear-gradient(180deg, #020919bd 0%, #02091942 18%, transparent 39%), radial-gradient(ellipse 39% 82% at 50% 53%, #020b207a 0%, #020b2052 45%, #020b2014 79%, transparent 100%); }
+.starsea-backdrop[data-frame-count]:not([data-frame-count="0"]) .starsea-blue-horizon { opacity: .65; }
+.starsea-backdrop[data-motion-state="paused"] *, .no-animation .starsea-backdrop * { animation-play-state: paused !important; }
+.starsea-site > #main-content { position: relative; z-index: 1; }
+.starsea-site > .archive-footer, .starsea-site > .shell-error-presence { position: relative; z-index: 1; }
+@keyframes starsea-horizon { from { transform: translate3d(-2%, 0, 0) scale(.96, .97); } to { transform: translate3d(2%, -3%, 0) scale(1.07, 1.05); } }
+@keyframes starsea-current { from { transform: translate3d(-2%, 1%, 0); opacity: .68; } to { transform: translate3d(2%, -2%, 0); opacity: 1; } }
+@keyframes starsea-shafts { from { transform: rotate(-4deg); opacity: .66; } to { transform: rotate(5deg); opacity: 1; } }
+@media (max-width: 640px) { .starsea-frame-layer { background-position: 56% center; } .starsea-readability-veil { background: linear-gradient(180deg, #020919bd 0%, #02091942 19%, transparent 40%), radial-gradient(ellipse 70% 90% at 50% 56%, #020b2066, #020b2024 76%, transparent 100%); } }
+@media (prefers-reduced-motion: reduce) { .starsea-backdrop * { animation: none !important; } }
+@media print { .starsea-backdrop { display: none !important; } }
