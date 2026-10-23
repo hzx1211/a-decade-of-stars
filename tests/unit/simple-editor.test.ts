@@ -29,8 +29,8 @@ describe("progressive private entry editor", () => {
   it("offers a title-only path without requiring dates, media or provenance fields", async () => {
     const fetcher = respond(base);
     const {onSaved} = editor();
-    expect(document.querySelectorAll("input,select,textarea").length).toBe(4);
-    expect((screen.getByRole("checkbox", {name: /允许访客查看这份精选/}) as HTMLInputElement).checked).toBe(false);
+    expect(document.querySelectorAll("input,select,textarea").length).toBe(3);
+    expect(screen.queryByRole("checkbox", {name: /访客|公开/})).toBeNull();
     expect(screen.queryByLabelText("素材权利人")).toBeNull();
     expect(screen.queryByLabelText("分类")).toBeNull();
     fireEvent.change(screen.getByLabelText("标题", {exact: true}), {target: {value: base.title}});
@@ -44,10 +44,11 @@ describe("progressive private entry editor", () => {
     expect(payload.data.licenseNotes).toBeUndefined();
     expect(payload.data.rightsStatus).toBeUndefined();
     expect(payload.data.allowedUseScope).toBeUndefined();
+    expect(payload.isPublic).toBe(false);
   });
 
   it("preserves hidden media, provenance, ordering and relationships when only the title is edited", async () => {
-    const entry: Entry = {...base, kind: "music", favorite: true, data: {
+    const entry: Entry = {...base, kind: "music", favorite: true, isPublic: true, data: {
       description: "明确标记的合成验收内容", notes: "隐藏笔记保留", date: "2009", datePrecision: "year", year: 2009,
       category: "单曲", tags: ["验收"], artist: "测试占位", albumId: "10000000-0000-4000-8000-000000000002",
       assetId: "10000000-0000-4000-8000-000000000003", coverAssetId: "10000000-0000-4000-8000-000000000004",
@@ -67,6 +68,7 @@ describe("progressive private entry editor", () => {
     expect(patchEntrySchema.safeParse(payload).success).toBe(true);
     expect(payload.data).toEqual({...entry.data, status: "saved"});
     expect(payload.favorite).toBe(true);
+    expect(payload.isPublic).toBe(true);
   });
 
   it("keeps an advanced edit when its section is folded before saving", async () => {

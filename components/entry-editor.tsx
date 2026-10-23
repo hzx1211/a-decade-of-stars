@@ -68,7 +68,7 @@ export function EntryEditor({ kind, entry, initialData, entries, assets, setting
     return { datePrecision: precision, status: "saved", ...existing };
   });
   const [favorite, setFavorite] = useState(entry?.favorite || false);
-  const [isPublic, setIsPublic] = useState(entry?.isPublic === true);
+  const isPublic = entry?.isPublic === true;
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [uploadStates, setUploadStates] = useState<Record<string, AssetUploadState>>({});
@@ -166,7 +166,6 @@ export function EntryEditor({ kind, entry, initialData, entries, assets, setting
   return <Modal closeDisabled={busy || uploading} title={`${entry ? "编辑" : "新增"}${kindLabels[kind]}`} onClose={onClose} wide><form onSubmit={submit} className={`ws-editor simple-editor ${isWriting ? "ws-editor-writing" : ""}`}>
     {kind === "photos" && <div className="simple-editor-intro"><span className="simple-editor-signal" aria-hidden="true" /><p>保存后，照片会出现在照片馆</p></div>}
     <label className="ws-field simple-field ws-title-field">标题<input value={title} onChange={event => setTitle(event.target.value)} required maxLength={200} placeholder={kind === "letters" ? "这次，想对他说什么" : kind === "journey" ? "给这一年留一个标题" : "写一个你会记得的名字"} autoFocus /></label>
-    <label className="ws-check simple-public-check"><input type="checkbox" checked={isPublic} onChange={event => setIsPublic(event.target.checked)} /><span>允许访客查看这份精选<small>默认私密；关联的照片、歌曲或视频也会随记录公开。</small></span></label>
     <div className="simple-primary-date">
       {usesYear && field("year", "年份", "可留空，例如 2009", "number")}
       {hasDate && kind !== "milestones" && dateField}

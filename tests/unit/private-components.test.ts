@@ -4,12 +4,22 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 import {cleanup, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import {AnimatePresence} from "motion/react";
 import {Modal, selectedBackup} from "../../components/client-utils";
+import {LoginForm} from "../../components/login-form";
 import {MotionScope} from "../../components/motion";
 import {defaultSettings, type Asset, type Entry} from "../../lib/types";
+
+vi.mock("next/navigation", () => ({useRouter: () => ({push: vi.fn(), refresh: vi.fn()})}));
 
 afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 
 describe("private workspace interaction boundaries",()=>{
+  it("does not offer anonymous browsing from the login form",()=>{
+    render(React.createElement(LoginForm,{setupRequired:false,mode:"local"}));
+    expect(screen.queryByText("以访客身份浏览")).toBeNull();
+    expect(screen.queryByText("仅查看已公开的精选内容")).toBeNull();
+    expect(screen.getByRole("link",{name:"忘记密码"}).getAttribute("href")).toBe("/auth/reset-password");
+  });
+
   it("retains the focus trap until Escape exit completes and restores the opener despite a child autoFocus",async()=>{
     const closed=vi.fn();
     function Harness() {

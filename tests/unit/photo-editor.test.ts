@@ -81,7 +81,7 @@ describe("photo editor upload completion", () => {
     expect([...UploadRequest.sent[0].body!.keys()]).toEqual(["file"]);
     expect(screen.queryByLabelText("素材权利人")).toBeNull();
     expect(screen.queryByLabelText("使用依据")).toBeNull();
-    expect((screen.getByRole("checkbox", {name: /允许访客查看这份精选/}) as HTMLInputElement).checked).toBe(false);
+    expect(screen.queryByRole("checkbox", {name: /访客|公开/})).toBeNull();
     expect((screen.getByTestId("entry-save") as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole("button", {name: "取消"}) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole("button", {name: "关闭弹窗"}) as HTMLButtonElement).disabled).toBe(true);
