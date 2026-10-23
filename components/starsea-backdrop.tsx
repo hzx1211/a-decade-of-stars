@@ -58,7 +58,7 @@ async function decodedFrame(src: string, signal: AbortSignal): Promise<DecodedFr
 }
 
 /** A blue concert sea with an optional, authenticated sequence of fully decoded image keyframes. */
-export function StarseaBackdrop() {
+export function StarseaBackdrop({ privateMediaEnabled = true }: { privateMediaEnabled?: boolean }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const frame = useRef<HTMLDivElement>(null);
   const imageLayerA = useRef<HTMLDivElement>(null);
@@ -188,7 +188,7 @@ export function StarseaBackdrop() {
     }
 
     async function loadFrames() {
-      if (cache.checked || pending || document.hidden || disposed || (!enabled && cache.images.length)) return;
+      if (!privateMediaEnabled || cache.checked || pending || document.hidden || disposed || (!enabled && cache.images.length)) return;
       const controller = new AbortController();
       pending = controller;
       if (scene) scene.dataset.frameState = enabled ? cache.images.length ? "ready" : "loading" : "paused";
@@ -365,9 +365,9 @@ export function StarseaBackdrop() {
       if (scene) {
         scene.dataset.motionState = running ? "running" : "paused";
         scene.dataset.frameCount = String(cache.images.length);
-        scene.dataset.frameState = !running ? "paused" : cache.images.length ? "ready" : cache.checked ? cache.failed ? "error" : "empty" : "loading";
+        scene.dataset.frameState = !privateMediaEnabled ? "disabled" : !running ? "paused" : cache.images.length ? "ready" : cache.checked ? cache.failed ? "error" : "empty" : "loading";
       }
-      if (!document.hidden) { void loadFrames(); if (running) request = requestAnimationFrame(tick); }
+      if (!document.hidden) { if (privateMediaEnabled) void loadFrames(); if (running) request = requestAnimationFrame(tick); }
       else { pending?.abort(); pending = undefined; }
     }
 
@@ -378,7 +378,7 @@ export function StarseaBackdrop() {
       disposed = true; cancelAnimationFrame(request); pending?.abort();
       window.removeEventListener("resize", resize); document.removeEventListener("visibilitychange", visibility);
     };
-  }, [enabled]);
+  }, [enabled, privateMediaEnabled]);
 
   return <div ref={frame} className="starsea-backdrop" aria-hidden="true" data-testid="starsea-backdrop" data-motion-managed data-motion-state="paused" data-frame-state="paused" data-frame-count="0" data-frame-index="0" data-meteor-count="0" data-meteor-group="none" data-meteor-group-size="0">
     <div className="starsea-image-frames">

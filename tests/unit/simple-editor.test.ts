@@ -29,8 +29,9 @@ describe("progressive private entry editor", () => {
   it("offers a title-only path without requiring dates, media or provenance fields", async () => {
     const fetcher = respond(base);
     const {onSaved} = editor();
-    expect(document.querySelectorAll("input,select,textarea").length).toBe(3);
-    expect(screen.queryByRole("checkbox", {name: /访客|公开/})).toBeNull();
+    expect(document.querySelectorAll("input,select,textarea").length).toBe(4);
+    expect((screen.getByRole("checkbox", {name: /公开给访客/}) as HTMLInputElement).checked).toBe(false);
+    expect(screen.getByText(/个人笔记始终私密/)).toBeTruthy();
     expect(screen.queryByLabelText("素材权利人")).toBeNull();
     expect(screen.queryByLabelText("分类")).toBeNull();
     fireEvent.change(screen.getByLabelText("标题", {exact: true}), {target: {value: base.title}});
@@ -47,6 +48,26 @@ describe("progressive private entry editor", () => {
     expect(payload.isPublic).toBe(false);
   });
 
+  it("publishes only after the owner turns on visitor access", async () => {
+    const fetcher = respond(base);
+    const {onSaved} = editor();
+    fireEvent.change(screen.getByLabelText("标题", {exact: true}), {target: {value: base.title}});
+    fireEvent.click(screen.getByRole("checkbox", {name: /公开给访客/}));
+    fireEvent.click(screen.getByRole("button", {name: "保存记录"}));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(base));
+    expect(JSON.parse(fetcher.mock.calls[0][1].body)).toMatchObject({isPublic: true, data: {status: "saved"}});
+  });
+
+  it("keeps a publicly checked draft unpublished until it is saved as a record", async () => {
+    const fetcher = respond({...base, data: {status: "draft"}});
+    const {onSaved} = editor({entry: {...base, data: {status: "draft"}}});
+    fireEvent.change(screen.getByLabelText("标题", {exact: true}), {target: {value: base.title}});
+    fireEvent.click(screen.getByRole("checkbox", {name: /公开给访客/}));
+    fireEvent.click(screen.getByRole("button", {name: "保存草稿"}));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled());
+    expect(JSON.parse(fetcher.mock.calls[0][1].body)).toMatchObject({isPublic: true, data: {status: "draft"}});
+  });
+
   it("preserves hidden media, provenance, ordering and relationships when only the title is edited", async () => {
     const entry: Entry = {...base, kind: "music", favorite: true, isPublic: true, data: {
       description: "明确标记的合成验收内容", notes: "隐藏笔记保留", date: "2009", datePrecision: "year", year: 2009,
@@ -58,6 +79,7 @@ describe("progressive private entry editor", () => {
     }};
     const fetcher = respond(entry);
     const {onSaved} = editor({kind: "music", entry});
+    expect((screen.getByRole("checkbox", {name: /公开给访客/}) as HTMLInputElement).checked).toBe(true);
     expect(screen.queryByLabelText("个人笔记")).toBeNull();
     fireEvent.change(screen.getByLabelText("标题", {exact: true}), {target: {value: "只改标题的合成验收记录"}});
     fireEvent.click(screen.getByRole("button", {name: "保存记录"}));

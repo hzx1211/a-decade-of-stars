@@ -1,8 +1,8 @@
 # 十余年星途纪念馆
 
-「张杰勇敢飞，星星永相随。」一个默认私人的个人音乐、影像与记忆空间。用户已确认从 **2009 年**开始喜欢张杰；这一年仅作为可修改的星途起点，网站不会据此生成任何经历、作品或演唱会记录。
+「张杰勇敢飞，星星永相随。」这是一个由所有者管理、可向访客展示精选内容的个人音乐、影像与记忆空间。新记录默认私人；所有者可在编辑时单独选择「公开给访客」，草稿始终不会公开。日记笔记和媒体权利证明仍为私人资料。用户已确认从 **2009 年**开始喜欢张杰；这一年仅作为可修改的星途起点，网站不会据此生成任何经历、作品或演唱会记录。
 
-首期采用真实 SQLite 数据库和本机媒体目录，可立即运行；保留 Supabase Auth、PostgreSQL、私有 Storage 接入。初始收藏为空。首页参考所有者提供的演唱会海报和“小北斗”拼图配色，使用深海蓝、银灰、暖金；这两张参考图不在网页中展示。页面展示所有者另行提供的两张现场照片，并以指定的蓝色双片衬线 V 作为站点标志和主视觉。照片放在本机私有目录，由登录后的认证接口读取，不会自动写成收藏记录；提供图片不代表网站取得了公开传播许可。主照片缺失时，首页使用 Twinklestellar 拍摄、以 CC BY-SA 4.0 开放许可的张杰照片作为替补。该许可照片的来源、处理与许可见 [素材署名](assets/licensed/ATTRIBUTION.md) 和网站「照片来源与版权」页。网站与张杰本人、工作室、唱片公司及官方团队无隶属关系。
+本地模式使用真实 SQLite 数据库和本机媒体目录；云端模式使用 Supabase Auth、PostgreSQL 与私有 Storage。首页参考所有者提供的演唱会海报和“小北斗”拼图配色，使用深海蓝、银灰、暖金；这两张参考图不在网页中展示。页面展示所有者另行提供的两张现场照片，并以指定的蓝色双片衬线 V 作为站点标志和主视觉。私人主题照片仅供所有者查看；访客主视觉在需要时使用 Twinklestellar 拍摄、以 CC BY-SA 4.0 开放许可的张杰照片作为替补。该许可照片的来源、处理与许可见 [素材署名](assets/licensed/ATTRIBUTION.md) 和网站「照片来源与版权」页。提供图片不代表网站取得了公开传播许可。网站与张杰本人、工作室、唱片公司及官方团队无隶属关系。
 
 ## 运行
 
@@ -39,6 +39,8 @@ npm start
 
 星海背景支持私人生成图片关键帧，分镜与实际生成状态见 [背景分镜](docs/starsea-background-prompts.md)。图片就绪后通过认证接口加载，解码成功才参与叠化；未生成或加载失败时继续显示实时灯海。生成使用单独的图像 API，本地运行网站不需要 API 密钥；密钥只在生成时从本机环境变量读取，不写入源码或前端。
 
+首页和登录页提供访客入口。访客可以只读浏览所有者已精选、非草稿的记录及其直接关联媒体；未公开记录和草稿不会出现在访客视图中。编辑记录时，所有者可通过「公开给访客」开关发布或撤回；撤回后，关联媒体也会在下一次请求时停止提供。访客不获得所有者登录状态，新增、编辑、删除、上传、设置和备份仍需所有者登录。
+
 设置可调整起始年份、主题、动画、首页顺序与精选内容。备份为显式下载的 JSON，恢复先预览再确认，按 ID 合并，不清空现有数据。**JSON 不含媒体文件本身**，媒体须另外备份。纪念册只导出主动选入的记录，打印 PDF 由浏览器完成。
 
 ## 架构与云端接入
@@ -47,6 +49,6 @@ Next.js App Router、React、TypeScript、Zod、Lucide；本地通过服务端 `
 
 目录：`app/` 路由和 API，`components/` 工作区与播放器，`lib/server/` 身份与数据操作，`lib/validation/` 校验，`supabase/migrations/` PostgreSQL/RLS/Storage，`tests/` 自动化测试，`docs/` 运维说明。
 
-云端部署要求 Node.js 22.13+（Vercel 可选择 Node.js 24），并设置 `DATA_MODE=supabase`、`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`、服务端 `SUPABASE_OWNER_ID`、规范 HTTPS `APP_ORIGIN` 和不超过 50 MB 的 `CLOUD_UPLOAD_LIMIT_MB`。运行应用不需要 `service_role`。按时间顺序应用 `supabase/migrations/` 全部六份迁移；先受控创建唯一 Auth 所有者，再应用数据库层注册保护迁移。最后两份迁移负责阻断额外 Auth 用户并在事务提交时验证所有者注册状态。所有内容和媒体访问都要求所有者认证，记录上的 `isPublic` 标记不会开放匿名读取。Vercel 不会自动应用数据库迁移，也不会自动搬运本地 SQLite、JSON 备份或媒体文件；详见 [部署](docs/DEPLOYMENT.md)。没有有效 Supabase 凭证时，不把本地或模拟 PostgreSQL 测试称为云端验证。
+云端部署要求 Node.js 22.13+（Vercel 可选择 Node.js 24），并设置 `DATA_MODE=supabase`、`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`、服务端 `SUPABASE_OWNER_ID`、`PUBLIC_MEDIA_READ_TOKEN`、规范 HTTPS `APP_ORIGIN` 和不超过 50 MB 的 `CLOUD_UPLOAD_LIMIT_MB`。`PUBLIC_MEDIA_READ_TOKEN` 是服务端私密值，至少 32 字节随机熵；Supabase 只保存其 SHA-256 摘要。运行应用不需要 `service_role`。按时间顺序应用 `supabase/migrations/` 全部八份迁移；数据库仍只允许唯一所有者账号，访客精选由受限只读投影提供。访客只能读取所有者明确公开且非草稿的记录和这些记录直接引用的媒体。新记录默认私人；私密笔记、权利证明、所有者标识、原文件名与存储路径不会公开。Vercel 不会自动应用数据库迁移，也不会自动搬运本地 SQLite、JSON 备份或媒体文件；详见 [部署](docs/DEPLOYMENT.md)。没有有效 Supabase 凭证时，不把本地或模拟 PostgreSQL 测试称为云端验证。
 
 文档：[数据模型](docs/DATA_MODEL.md) · [安全](docs/SECURITY.md) · [媒体上传](docs/MEDIA_UPLOAD.md) · [素材权利](docs/CONTENT_RIGHTS.md) · [部署](docs/DEPLOYMENT.md) · [备份恢复](docs/BACKUP_RESTORE.md) · [测试](docs/TESTING.md)。

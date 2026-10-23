@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Eye, EyeOff, LockKeyhole, LoaderCircle } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LockKeyhole, LoaderCircle, Compass } from "lucide-react";
 import { request, errorMessage } from "./client-utils";
 import { MotionPresence, MotionSwap } from "./motion";
 
@@ -25,6 +25,7 @@ export function LoginForm({ setupRequired }: { setupRequired: boolean; mode: str
     <MotionPresence show={!!error}><p className="ws-error" role="alert">{error}</p></MotionPresence>
     <button type="submit" className="ws-button ws-login-submit" disabled={pending} aria-busy={pending}><MotionSwap motionKey={pending ? "pending" : "ready"} as="span" className="login-submit-content">{pending ? <LoaderCircle size={18} className="ws-spin" /> : <ArrowRight size={18} />}{pending ? "正在验证…" : setupRequired ? "创建我的私人纪念馆" : "进入纪念馆"}</MotionSwap></button>
     <div className="ws-login-links">
+      <p className="ws-tiny"><Link href="/app/dashboard"><Compass size={14} aria-hidden="true" />以访客身份浏览</Link><span>仅查看已公开精选的内容</span></p>
       {!setupRequired && <p className="ws-tiny"><Link href="/auth/reset-password">忘记密码</Link></p>}
     </div>
   </form>;

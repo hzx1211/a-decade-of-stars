@@ -30,13 +30,17 @@ test.beforeAll(async ({playwright}) => {
 test.afterAll(async () => {await owner.dispose();});
 
 test("anonymous and forged sessions cannot read or mutate private records", async ({request}) => {
-  for (const route of ["/api/entries","/api/assets","/api/settings","/api/backup"]) expect((await request.get(route)).status()).toBe(401);
+  const privateRecord = await create("journal", "ANONYMOUS-HIDDEN-RECORD", {description: "PRIVATE-SENTINEL"});
+  for (const route of ["/api/entries","/api/assets","/api/settings"]) {
+    const response = await request.get(route); expect(response.status()).toBe(200);
+    expect(await response.text()).not.toContain("PRIVATE-SENTINEL");
+  }
+  expect((await request.get(`/api/entries/${privateRecord.id}`)).status()).toBe(404);
+  expect((await request.get("/api/backup")).status()).toBe(401);
   expect((await request.post("/api/entries", {headers: mutationHeaders, data: {kind:"journal",title:"intrusion",data:{}}})).status()).toBe(401);
-  expect((await request.get("/api/entries", {headers: {Cookie: "stars_owner_session=forged-token"}})).status()).toBe(401);
+  expect(await (await request.get("/api/entries", {headers: {Cookie: "stars_owner_session=forged-token"}})).text()).not.toContain(privateRecord.id);
   const page = await request.get("/app/journal", {maxRedirects: 0});
-  // Next.js may begin streaming before a server redirect, then emit a redirect meta.
-  if(page.status()===200) expect(await page.text()).toMatch(/http-equiv="refresh"[^>]+\/login|NEXT_REDIRECT/);
-  else {expect([302,303,307,308]).toContain(page.status());expect(page.headers().location).toContain("/login");}
+  expect(page.status()).toBe(200); expect(await page.text()).not.toContain("PRIVATE-SENTINEL");
 });
 
 test("the owner is unique and cross-origin writes are denied", async ({request}) => {
@@ -90,7 +94,7 @@ test("original media bytes remain private, support real Range reads and guard re
   expect(response.status()).toBe(206); expect(response.headers()["content-range"]).toBe(`bytes 0-43/${audio.size}`);
   expect((await response.body()).subarray(0,4).toString()).toBe("RIFF"); expect((await response.body()).length).toBe(44);
   expect((await owner.get(`/api/assets/${audio.id}`,{headers:{Range:`bytes=${audio.size}-`}})).status()).toBe(416);
-  expect((await request.get(`/api/assets/${audio.id}`)).status()).toBe(401);
+  expect((await request.get(`/api/assets/${audio.id}`)).status()).toBe(404);
   const photo=await create("photos","API 原创照片测试",{assetId:image.id});
   expect((await owner.delete(`/api/assets/${image.id}`,{headers:mutationHeaders})).status()).toBe(409);
   expect((await owner.patch(`/api/assets/${image.id}`,{headers:mutationHeaders,data:{rightsHolder:"原创测试作者",licenseNotes:"原创图形，仅测试用途"}})).ok()).toBe(true);
@@ -121,6 +125,8 @@ test("backup preview, confirmation, merge restore and missing binaries are real"
 });
 
 test("logout invalidates the actual server session", async () => {
+  const record = await create("journal", "LOGOUT-PRIVATE-RECORD", {notes: "LOGOUT-PRIVATE-NOTES"});
   expect((await owner.post("/api/auth/logout",{headers:mutationHeaders,data:{}})).ok()).toBe(true);
-  expect((await owner.get("/api/entries")).status()).toBe(401);
+  expect((await owner.get(`/api/entries/${record.id}`)).status()).toBe(404);
+  expect((await (await owner.get("/api/auth/status")).json()).authenticated).toBe(false);
 });

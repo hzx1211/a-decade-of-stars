@@ -114,7 +114,7 @@ describe("private media backend without mandatory proof fields", () => {
     await expect(uploadAsset(uploadRequest(Buffer.from("<script>bad()</script>")))).rejects.toMatchObject({status: 415});
     const {asset} = await uploadAsset(uploadRequest());
     identity.authenticated = false;
-    await expect(serveAsset(new Request(`http://127.0.0.1:3000/api/assets/${asset.id}/file`), asset.id)).rejects.toMatchObject({status: 401});
+    await expect(serveAsset(new Request(`http://127.0.0.1:3000/api/assets/${asset.id}/file`), asset.id)).rejects.toMatchObject({status: 404});
     identity.authenticated = true;
     expect((await serveAsset(new Request(`http://127.0.0.1:3000/api/assets/${asset.id}/file`, {headers: {Range: "bytes=99999-"}}), asset.id)).status).toBe(416);
     await expect(getAsset("20000000-0000-4000-8000-000000000002", asset.id)).rejects.toMatchObject({status: 404});

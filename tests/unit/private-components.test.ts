@@ -13,10 +13,10 @@ vi.mock("next/navigation", () => ({useRouter: () => ({push: vi.fn(), refresh: vi
 afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 
 describe("private workspace interaction boundaries",()=>{
-  it("does not offer anonymous browsing from the login form",()=>{
+  it("offers a read-only visitor route from the login form",()=>{
     render(React.createElement(LoginForm,{setupRequired:false,mode:"local"}));
-    expect(screen.queryByText("以访客身份浏览")).toBeNull();
-    expect(screen.queryByText("仅查看已公开的精选内容")).toBeNull();
+    expect(screen.getByRole("link",{name:/以访客身份浏览/}).getAttribute("href")).toBe("/app/dashboard");
+    expect(screen.getByText("仅查看已公开精选的内容")).toBeTruthy();
     expect(screen.getByRole("link",{name:"忘记密码"}).getAttribute("href")).toBe("/auth/reset-password");
   });
 

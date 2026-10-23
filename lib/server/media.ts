@@ -6,14 +6,15 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { z } from "zod";
 import type { Asset } from "@/lib/types";
+import { sanitizePublicAsset } from "@/lib/public-archive";
 import { rightsSchema } from "@/lib/validation/schemas";
 import { identifyMedia, parseRange } from "@/lib/validation/media";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { dataMode, mediaPath, uploadLimit } from "./config";
 import { AppError } from "./errors";
-import { requireApiOwner } from "./auth";
+import { currentOwner, requireApiOwner } from "./auth";
 import { assertSameOrigin, readJson } from "./security";
-import { getAsset, getAssets, getEntries, getSettings, getLocalState, removeAssetRecord, saveAsset, saveLocalAsset } from "./store";
+import { getAsset, getAssets, getEntries, getSettings, getLocalState, getPublicAssetFile, removeAssetRecord, saveAsset, saveLocalAsset } from "./store";
 import { assetReferences, validateReferences } from "./references";
 import { getDatabase, transaction } from "./db";
 
@@ -222,8 +223,9 @@ export async function assetFileExists(asset: Asset): Promise<boolean> {
   const {data, error} = await client.storage.from(bucket).list(prefix, {search: name, limit: 100}); return !error && Boolean(data?.some(item => item.name === name && Number(item.metadata?.size) === asset.size));
 }
 export async function serveAsset(request: Request, id: string, head = false) {
-  const owner = await requireApiOwner(); z.uuid().parse(id); const asset = await getAsset(owner.id, id);
-  const headers = new Headers({"Content-Type": asset.mimeType, "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(asset.filename)}`, "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "Accept-Ranges": "bytes", "Content-Security-Policy": "default-src 'none'; sandbox"});
+  const owner = await currentOwner(); z.uuid().parse(id); const asset = owner ? await getAsset(owner.id, id) : await getPublicAssetFile(id);
+  const filename = owner ? asset.filename : sanitizePublicAsset(asset).filename;
+  const headers = new Headers({"Content-Type": asset.mimeType, "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(filename)}`, "Cache-Control": "private, no-store", "Vary": "Cookie", "X-Content-Type-Options": "nosniff", "Accept-Ranges": "bytes", "Content-Security-Policy": "default-src 'none'; sandbox"});
   const range = parseRange(request.headers.get("range"), asset.size);
   if (range === "invalid") {headers.set("Content-Range", `bytes */${asset.size}`); return new Response(null, {status: 416, headers});}
   const start = range?.start || 0; const end = range?.end ?? asset.size - 1;
@@ -236,10 +238,33 @@ export async function serveAsset(request: Request, id: string, head = false) {
     const stream = fs.createReadStream(destination, {start, end}); request.signal.addEventListener("abort", () => stream.destroy(), {once: true});
     return new Response(Readable.toWeb(stream) as ReadableStream<Uint8Array>, {status: range ? 206 : 200, headers});
   }
-  const client = await createSupabaseServerClient(); const {data, error} = await client.storage.from(bucket).createSignedUrl(asset.storagePath, 60);
-  if (error || !data) throw new AppError(404, "云端媒体文件不可读取，请检查 Storage 权限或备份");
-  const upstream = await fetch(data.signedUrl, {method: head ? "HEAD" : "GET", headers: range ? {Range: `bytes=${start}-${end}`} : {}, signal: request.signal, cache: "no-store"});
-  if (!upstream.ok) throw new AppError(upstream.status === 404 ? 404 : 502, "媒体存储暂时无法读取");
-  if (range && upstream.status !== 206) throw new AppError(502, "云端存储没有响应分段读取请求");
+  let url: string;
+  const upstreamHeaders = new Headers(range ? {Range: `bytes=${start}-${end}`} : {});
+  if (owner) {
+    const client = await createSupabaseServerClient(); const {data, error} = await client.storage.from(bucket).createSignedUrl(asset.storagePath, 60);
+    if (error || !data) throw new AppError(404, "媒体不存在");
+    url = data.signedUrl;
+  } else {
+    // Storage rechecks published references on GET/HEAD. Its CDN additionally
+    // needs this server-only credential for the internal object-info request;
+    // it never authorizes a private object. Never mint a visitor bearer URL.
+    const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if (!base || !key) throw new AppError(503, "Supabase 尚未配置", "SUPABASE_NOT_CONFIGURED");
+    const readToken = process.env.PUBLIC_MEDIA_READ_TOKEN;
+    if (!readToken) throw new AppError(503, "公开媒体读取尚未配置", "PUBLIC_MEDIA_NOT_CONFIGURED");
+    url = `${base.replace(/\/$/, "")}/storage/v1/object/authenticated/${bucket}/${asset.storagePath.split("/").map(encodeURIComponent).join("/")}`;
+    upstreamHeaders.set("apikey", key);
+    upstreamHeaders.set("x-archive-public-media-token", readToken);
+  }
+  const upstream = await fetch(url, {method: head ? "HEAD" : "GET", headers: upstreamHeaders, signal: request.signal, cache: "no-store", redirect: "error"});
+  if (!upstream.ok) {
+    await upstream.body?.cancel();
+    if ([400, 401, 403, 404].includes(upstream.status)) throw new AppError(404, "媒体不存在");
+    throw new AppError(502, "媒体存储暂时无法读取");
+  }
+  if (range && (upstream.status !== 206 || upstream.headers.get("content-range") !== `bytes ${start}-${end}/${asset.size}`)) {
+    await upstream.body?.cancel(); throw new AppError(502, "云端存储没有正确响应分段读取请求");
+  }
   return new Response(head ? null : upstream.body, {status: range ? 206 : 200, headers});
 }

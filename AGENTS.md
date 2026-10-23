@@ -1,6 +1,6 @@
 # Project instructions
 
-This is a private, single-owner Zhang Jie fan archive. The owner confirmed 2009 as the start year. Keep all content and media behind server-side authentication, and do not fabricate artist facts, personal memories, or media records.
+This is a single-owner Zhang Jie fan archive with a private owner workspace and an anonymous, read-only visitor selection. The owner confirmed 2009 as the start year. Only records explicitly marked public and not in draft, and media directly referenced by those records, may be read without login. Private notes, rights evidence, account data, uploads, edits, settings changes, backups and unselected media require server-side owner authentication. Never fabricate artist facts, personal memories, or media records. Publishing and withdrawing selections must work in both local SQLite and real Supabase mode; keep Storage buckets private and do not expose long-lived media signing access to anonymous users.
 
 Local mode uses a real SQLite database and media files. Supabase is an optional separately configured provider. Do not equate local or simulated database tests with successful live Supabase validation.
 

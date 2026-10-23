@@ -5,18 +5,23 @@ import type { Entry, EntryKind } from "@/lib/types";
 import { entryKinds } from "@/lib/types";
 import { createEntrySchema, patchEntrySchema, patchSettingsSchema, settingsSchema } from "@/lib/validation/schemas";
 import { assertSameOrigin, readJson } from "./security";
-import { requireApiOwner } from "./auth";
-import { getAssets, getEntries, getEntry, getSettings, getLocalState, removeEntry, saveEntry, saveSettings, saveLocalEntry, saveLocalSettings } from "./store";
+import { currentOwner, requireApiOwner } from "./auth";
+import { getAssets, getEntries, getEntry, getSettings, getLocalState, getPublicEntries, removeEntry, saveEntry, saveSettings, saveLocalEntry, saveLocalSettings } from "./store";
 import { entryReferences, validateReferences, validateSettingsReferences } from "./references";
 import { AppError } from "./errors";
 import { dataMode } from "./config";
 import { getDatabase, transaction } from "./db";
 
 export async function listEntries(request: Request) {
-  const owner = await requireApiOwner(); const params = new URL(request.url).searchParams;
+  const owner = await currentOwner(); const params = new URL(request.url).searchParams;
   const kind = params.get("kind"); if (kind && !entryKinds.includes(kind as EntryKind)) throw new AppError(400, "内容类型无效");
   const q = params.get("q") || undefined; if (q && q.length > 300) throw new AppError(400, "搜索条件过长");
-  return {entries: await getEntries(owner.id, kind as EntryKind | undefined, q)};
+  if (owner) return {entries: await getEntries(owner.id, kind as EntryKind | undefined, q)};
+  // Search the public projection so private notes cannot affect search results.
+  let entries = await getPublicEntries();
+  if (kind) entries = entries.filter(entry => entry.kind === kind);
+  if (q) {const query = q.toLocaleLowerCase(); entries = entries.filter(entry => `${entry.title} ${JSON.stringify(entry.data)}`.toLocaleLowerCase().includes(query));}
+  return {entries};
 }
 export async function createEntry(request: Request) {
   assertSameOrigin(request); const owner = await requireApiOwner(); const input = createEntrySchema.parse(await readJson(request));

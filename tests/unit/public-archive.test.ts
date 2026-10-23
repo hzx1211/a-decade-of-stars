@@ -40,6 +40,8 @@ describe("selected public archive projection", () => {
     };
     const safeAsset = sanitizePublicAsset(raw);
     expect(safeAsset).toEqual(expect.objectContaining({ownerId: "", storagePath: "", rightsStatus: "", allowedUseScope: []}));
+    expect(safeAsset.filename).toBe("image-public-asset.png");
+    expect(JSON.stringify(safeAsset)).not.toContain("selected.png");
     expect(safeAsset).not.toHaveProperty("rightsHolder");
     expect(safeAsset).not.toHaveProperty("licenseNotes");
     expect(safeAsset).not.toHaveProperty("sourceUrl");

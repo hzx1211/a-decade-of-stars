@@ -5,7 +5,7 @@ const state = vi.hoisted(() => ({authenticated: true, ownerId: "10000000-0000-40
 vi.mock("server-only", () => ({}));
 vi.mock("../../lib/server/auth", async () => {
   const {AppError} = await import("../../lib/server/errors");
-  return {requireApiOwner: async () => {if (!state.authenticated) throw new AppError(401, "请先登录"); return {id: state.ownerId};}};
+  return {currentOwner: async () => state.authenticated ? {id: state.ownerId} : null, requireApiOwner: async () => {if (!state.authenticated) throw new AppError(401, "请先登录"); return {id: state.ownerId};}};
 });
 const storage = vi.hoisted(() => ({info: vi.fn(), createSignedUrl: vi.fn(), createSignedUploadUrl: vi.fn(), remove: vi.fn()}));
 vi.mock("../../lib/supabase/server", () => ({createSupabaseServerClient: async () => ({
@@ -29,6 +29,7 @@ vi.mock("../../lib/server/store", async () => {
   return {
     getSettings: async () => defaultSettings,
     getAsset: async (ownerId: string, id: string) => {const asset = state.saved.get(id); if (asset?.ownerId === ownerId) return asset; throw new AppError(404, "媒体不存在");},
+    getPublicAssetFile: async () => {throw new AppError(404, "媒体不存在");},
     saveAsset: async (asset: Asset) => {state.saved.set(asset.id, asset);},
   };
 });
@@ -110,12 +111,13 @@ describe("cloud media upload intents", () => {
     expect(await cancelAssetUpload(request({intentId: next.intentId}))).toEqual({ok: true});
     expect(state.intents.size).toBe(0); expect(state.saved.size).toBe(0);
   });
-  it("requires owner authentication and exact origin before signing or reading any media", async () => {
+  it("requires owner authentication and exact origin before signing and hides unselected media", async () => {
     await expect(initializeAssetUpload(request(original, "https://evil.example"))).rejects.toMatchObject({status: 403});
     state.authenticated = false;
     await expect(init()).rejects.toMatchObject({status: 401});
     await expect(completeAssetUpload(request({intentId: crypto.randomUUID()}))).rejects.toMatchObject({status: 401});
-    await expect(serveAsset(new Request("https://archive.example/api/assets/invalid/file"), "invalid")).rejects.toMatchObject({status: 401});
+    const privateId = crypto.randomUUID();
+    await expect(serveAsset(new Request(`https://archive.example/api/assets/${privateId}`), privateId)).rejects.toMatchObject({status: 404});
     expect(storage.createSignedUploadUrl).not.toHaveBeenCalled(); expect(storage.info).not.toHaveBeenCalled();
   });
   it("refuses old multipart cloud upload before consuming file bytes", async () => {

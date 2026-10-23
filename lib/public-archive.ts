@@ -55,10 +55,11 @@ export function sanitizePublicEntry(entry: Entry, visibleEntryIds?: Set<string>)
 }
 
 export function sanitizePublicAsset(asset: Asset): Asset {
+  const extensions: Record<string, string> = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif", "image/avif": "avif", "audio/mpeg": "mp3", "audio/wav": "wav", "audio/ogg": "ogg", "audio/flac": "flac", "audio/mp4": "m4a", "video/mp4": "mp4", "video/webm": "webm"};
   return {
     id: asset.id,
     ownerId: "",
-    filename: asset.filename,
+    filename: `${asset.mediaType}-${asset.id}.${extensions[asset.mimeType] || "bin"}`,
     mimeType: asset.mimeType,
     size: asset.size,
     mediaType: asset.mediaType,

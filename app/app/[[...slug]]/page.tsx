@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { Workspace } from "@/components/workspace";
-import { requireOwner } from "@/lib/server/auth";
-import { getEntries, getAssets, getSettings } from "@/lib/server/store";
+import { currentOwner } from "@/lib/server/auth";
+import { getEntries, getAssets, getSettings, getPublicState } from "@/lib/server/store";
 import { entryKinds, kindLabels, type EntryKind } from "@/lib/types";
 import {hasThemeMedia} from "@/lib/server/theme-media";
 export async function generateMetadata({params}:{params:Promise<{slug?:string[]}>}) {
@@ -14,8 +14,17 @@ export default async function WorkspacePage({params}:{params:Promise<{slug?:stri
   const allowed=[...entryKinds,"calendar","search","archive","star-map","admin","settings"] as string[];
   if(!allowed.includes(kind)||slug.length>2)notFound();
   if(kind==="admin"&&slug[1]&&!["music","videos","photos","memories"].includes(slug[1]))notFound();
-  const owner=await requireOwner();
-  const [entries,assets,settings,themeMediaAvailable]=await Promise.all([getEntries(owner.id),getAssets(owner.id),getSettings(owner.id),hasThemeMedia()]);
+  const owner=await currentOwner();
+  if(!owner&&(kind==="admin"||kind==="settings"))notFound();
+  let entries: Awaited<ReturnType<typeof getEntries>>;
+  let assets: Awaited<ReturnType<typeof getAssets>>;
+  let settings: Awaited<ReturnType<typeof getSettings>>;
+  let themeMediaAvailable = false;
+  if(owner){
+    [entries,assets,settings,themeMediaAvailable]=await Promise.all([getEntries(owner.id),getAssets(owner.id),getSettings(owner.id),hasThemeMedia()]);
+  }else{
+    ({entries,assets,settings}=await getPublicState());
+  }
   if(slug[1]&&kind!=="admin"&&!entries.some(e=>e.id===slug[1]&&e.kind===kind))notFound();
-  return <Workspace kind={kind==="admin"&&slug[1]?`admin/${slug[1]}`:kind} initialEntries={entries} initialAssets={assets} settings={settings} themeMediaAvailable={themeMediaAvailable} detailId={kind!=="admin"?slug[1]:undefined}/>;
+  return <Workspace kind={kind==="admin"&&slug[1]?`admin/${slug[1]}`:kind} initialEntries={entries} initialAssets={assets} settings={settings} themeMediaAvailable={themeMediaAvailable} detailId={kind!=="admin"?slug[1]:undefined} readOnly={!owner}/>;
 }

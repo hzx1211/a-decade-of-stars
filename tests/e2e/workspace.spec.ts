@@ -135,6 +135,8 @@ test("desktop/mobile real creation, uploads, playback, lightbox, privacy and sel
     expect(pdf.subarray(0,4).toString()).toBe("%PDF");expect(pdf.length).toBeGreaterThan(2000);
   }
   await page.keyboard.press("Escape");
-  await page.context().clearCookies();await page.goto("/app/journal");await expect(page).toHaveURL(/\/login/);
+  await page.context().clearCookies();await page.goto("/app/journal");await expect(page).toHaveURL(/\/app\/journal/);
+  await expect(page.getByTestId("entry-create")).toHaveCount(0);
+  expect(await page.content()).not.toContain(`PRIVATE-UNSELECTED-${suffix}`);
   expect(errors).toEqual([]);
 });

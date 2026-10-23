@@ -68,7 +68,7 @@ export function EntryEditor({ kind, entry, initialData, entries, assets, setting
     return { datePrecision: precision, status: "saved", ...existing };
   });
   const [favorite, setFavorite] = useState(entry?.favorite || false);
-  const isPublic = entry?.isPublic === true;
+  const [isPublic, setIsPublic] = useState(entry?.isPublic === true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [uploadStates, setUploadStates] = useState<Record<string, AssetUploadState>>({});
@@ -174,6 +174,10 @@ export function EntryEditor({ kind, entry, initialData, entries, assets, setting
     </div>
     {kind === "music" && <div className="simple-music-source"><label className="ws-field simple-field">网易云链接或播放器代码<input type="text" aria-label="网易云链接或播放器代码" value={musicSourceText} onChange={event => { const value = event.target.value; setMusicSourceText(value); if (value.trim()) setMusicPlaybackMode("platform"); else if (data.assetId) setMusicPlaybackMode("local"); }} placeholder="粘贴网易云歌曲链接或 iframe 代码" autoComplete="url" /></label>{data.assetId && <label className="ws-field simple-field">播放来源<select value={musicPlaybackMode} onChange={event => setMusicPlaybackMode(event.target.value as "local" | "platform")}><option value="local">本地音频</option><option value="platform" disabled={!musicSourceText.trim()}>网易云或平台链接</option></select></label>}</div>}
     <label className="ws-field simple-field simple-content-field">{isWriting ? "正文" : "内容"}<textarea className={isWriting ? "ws-writing-area" : ""} value={data.description || ""} onChange={event => change("description", event.target.value)} rows={isWriting ? 6 : 4} placeholder={kind === "letters" ? "亲爱的张杰，\n\n今天想对你说……" : isWriting ? "把此刻的心情写下来。" : "一句话、一段资料，或这份珍藏的故事。"} /></label>
+    <section className="simple-disclosure simple-publication" aria-label="访客可见范围">
+      <label className="ws-check"><input type="checkbox" checked={isPublic} onChange={event => setIsPublic(event.target.checked)} /><span>公开给访客</span></label>
+      <p className="simple-section-note">开启后，访客可以在对应分类查看这条记录及关联媒体。个人笔记始终私密。{isWriting && "草稿即使勾选公开，也不会显示给访客。"}</p>
+    </section>
     {(isMedia || hasCover) && <section className="simple-disclosure">
       <button type="button" className="simple-disclosure-toggle" aria-expanded={mediaOpen} aria-controls={`${editorId}-media`} onClick={() => setMediaOpen(open => !open)}><ImagePlus size={17} /><span>{selectedAsset ? `已添加 ${selectedAsset.filename}` : mediaLabel}<small>{selectedAsset ? "点击更换" : kind === "photos" ? "选择或上传照片" : "可选"}</small></span><ChevronDown size={15} className={mediaOpen ? "is-open" : ""} /></button>
       <MotionPresence show={mediaOpen} preset="panel"><div id={`${editorId}-media`} className="simple-disclosure-body">

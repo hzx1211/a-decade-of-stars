@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Compass } from "lucide-react";
 import { getAuthStatus } from "@/lib/server";
 import { VMark } from "@/components/v-mark";
 import { SharedArtwork } from "@/components/motion";
@@ -15,6 +15,7 @@ export default async function Landing() {
       <p className="stage-landing-motto">张杰勇敢飞，星星永相随。</p>
       <p className="stage-landing-description">从 2009 年开始。<br/>把听过的歌、看过的舞台，和自己的故事，留在这里。</p>
       <div className="stage-landing-actions">
+        <Link href="/app/dashboard" className="stage-preview-link"><Compass size={17}/>浏览访客精选</Link>
         <Link href="/login" className="stage-enter">{status.setupRequired?"建立我的纪念馆":"进入我的纪念馆"}<ArrowUpRight size={19}/></Link>
       </div>
     </div>

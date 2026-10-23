@@ -149,7 +149,7 @@ function ShellFrame({ children, settings, readOnly }: { children: ReactNode; set
   }
 
   return <div ref={site} className={`site stage-site starsea-site ${!settings.animation ? "no-animation" : ""} theme-${settings.theme}`}>
-    <StarseaBackdrop />
+    <StarseaBackdrop key={readOnly ? "visitor" : "owner"} privateMediaEnabled={!readOnly} />
     <a href="#main-content" className="skip-link">跳到主要内容</a>
     <LayoutGroup id={navigationId}><ViewTransition name="archive-header" default="none"><header className="site-header archive-navigation" ref={header}><div className="nav-inner">
       <Link href="/app/dashboard" className="wordmark stage-wordmark" onClick={closeNavigation} aria-label="张杰纪念馆首页"><SharedArtwork name="archive-logo"><VMark size={46} /></SharedArtwork><span>张杰<small>{readOnly ? "蓝色星海 · 精选珍藏" : "蓝色星海 · 私人典藏"}</small></span></Link>

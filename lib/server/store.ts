@@ -9,10 +9,20 @@ import { AppError } from "./errors";
 
 type EntryRow = {id: string; owner_id: string; kind: EntryKind; title: string; data: string | Entry["data"]; favorite?: number | boolean; is_public?: number | boolean; created_at: string; updated_at: string};
 type AssetRow = {id: string; owner_id: string; filename: string; mime_type: string; size: number; media_type: Asset["mediaType"]; storage_path: string; metadata?: string; source_url?: string | null; rights_holder?: string | null; rights_status?: string; license_type?: string | null; license_notes?: string | null; attribution?: string | null; allowed_use_scope?: string[]; created_at: string};
+type PublicEntryRow = Omit<EntryRow, "owner_id" | "favorite">;
+type PublicAssetRow = Pick<AssetRow, "id" | "mime_type" | "size" | "media_type" | "created_at"> & {storage_extension: string};
+const publicStorageExtensions = new Set(["jpg", "jpeg", "png", "gif", "webp", "avif", "mp3", "wav", "ogg", "oga", "opus", "flac", "m4a", "mp4", "m4v", "webm"]);
 function entryFromRow(row: EntryRow): Entry {return {id: row.id, ownerId: row.owner_id, kind: row.kind, title: row.title, data: typeof row.data === "string" ? JSON.parse(row.data) : row.data, favorite: Boolean(row.favorite), isPublic: Boolean(row.is_public), createdAt: row.created_at, updatedAt: row.updated_at};}
 function assetFromRow(row: AssetRow): Asset {
   const metadata = row.metadata ? JSON.parse(row.metadata) : {sourceUrl: row.source_url || undefined, rightsHolder: row.rights_holder || undefined, rightsStatus: row.rights_status, licenseType: row.license_type || undefined, licenseNotes: row.license_notes || undefined, attribution: row.attribution || undefined, allowedUseScope: row.allowed_use_scope || []};
   return {id: row.id, ownerId: row.owner_id, filename: row.filename, mimeType: row.mime_type, size: row.size, mediaType: row.media_type, storagePath: row.storage_path, ...metadata, createdAt: row.created_at};
+}
+function publicAssetFromRow(row: PublicAssetRow, ownerId: string): Asset {
+  // The public view exposes only a verified suffix, never the original file
+  // name or object key. Reconstruct the immutable owner/id key on the server.
+  if (!publicStorageExtensions.has(row.storage_extension) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(row.id)) throw new AppError(404, "媒体不存在");
+  return {id: row.id, ownerId, filename: `${row.id}.${row.storage_extension}`, mimeType: row.mime_type, size: row.size, mediaType: row.media_type,
+    storagePath: `${ownerId}/${row.id}.${row.storage_extension}`, rightsStatus: "", allowedUseScope: [], createdAt: row.created_at};
 }
 export function getLocalState(ownerId: string): {entries: Entry[]; assets: Asset[]; settings: SiteSettings} {
   const db = getDatabase();
@@ -104,8 +114,9 @@ export async function getPublicState(): Promise<{entries: Entry[]; assets: Asset
       ? db.prepare(`SELECT * FROM media_assets WHERE owner_id=? AND id IN (${ids.map(() => "?").join(",")}) ORDER BY created_at DESC`).all(owner.id, ...ids)
       : [];
     const settingsRow = db.prepare("SELECT settings FROM site_settings WHERE owner_id=?").get(owner.id) as {settings: string} | undefined;
-    const visibleIds = new Set(selected.map(entry => entry.id));
-    entries = publicEntries(selected).map(entry => sanitizePublicEntry(entry, visibleIds));
+    const published = publicEntries(selected);
+    const visibleIds = new Set(published.map(entry => entry.id));
+    entries = published.map(entry => sanitizePublicEntry(entry, visibleIds));
     assets = (assetRows as unknown as AssetRow[]).map(assetFromRow).map(sanitizePublicAsset);
     settings = sanitizePublicSettings(settingsRow ? {...defaultSettings, ...JSON.parse(settingsRow.settings)} : {...defaultSettings}, entries, assets);
     return {entries, assets, settings};
@@ -115,16 +126,17 @@ export async function getPublicState(): Promise<{entries: Entry[]; assets: Asset
   if (!ownerId) return {entries, assets, settings};
   const client = createSupabasePublicClient();
   const [entryResult, assetResult, settingsResult] = await Promise.all([
-    client.from("public_entries").select("*").eq("owner_id", ownerId).order("created_at", {ascending: false}),
-    client.from("media_assets").select("id,owner_id,filename,mime_type,size,media_type,storage_path,created_at").eq("owner_id", ownerId).order("created_at", {ascending: false}),
-    client.from("public_site_settings").select("settings").eq("owner_id", ownerId).maybeSingle(),
+    client.from("public_entries").select("id,kind,title,data,is_public,created_at,updated_at").order("created_at", {ascending: false}),
+    client.from("public_media_assets").select("id,mime_type,size,media_type,storage_extension,created_at").order("created_at", {ascending: false}),
+    client.from("public_site_settings").select("settings").maybeSingle(),
   ]);
   checkError(entryResult.error); checkError(assetResult.error); checkError(settingsResult.error);
-  const selected = ((entryResult.data || []) as EntryRow[]).map(entryFromRow);
+  const selected = ((entryResult.data || []) as PublicEntryRow[]).map(row => entryFromRow({...row, owner_id: "", favorite: false}));
   const ids = publicAssetIds(selected);
-  const visibleIds = new Set(selected.map(entry => entry.id));
-  entries = publicEntries(selected).map(entry => sanitizePublicEntry(entry, visibleIds));
-  assets = ((assetResult.data || []) as AssetRow[]).map(assetFromRow).filter(asset => ids.has(asset.id)).map(sanitizePublicAsset);
+  const published = publicEntries(selected);
+  const visibleIds = new Set(published.map(entry => entry.id));
+  entries = published.map(entry => sanitizePublicEntry(entry, visibleIds));
+  assets = ((assetResult.data || []) as PublicAssetRow[]).filter(asset => ids.has(asset.id)).map(row => publicAssetFromRow(row, ownerId)).map(sanitizePublicAsset);
   const rawSettings = settingsResult.data?.settings;
   settings = sanitizePublicSettings({...defaultSettings, ...(typeof rawSettings === "string" ? JSON.parse(rawSettings) : rawSettings)}, entries, assets);
   return {entries, assets, settings};
@@ -151,7 +163,8 @@ export async function getPublicSettings(): Promise<SiteSettings> {
 export async function getPublicAssetFile(id: string): Promise<Asset> {
   let row: AssetRow | undefined;
   if (dataMode() === "local") {
-    row = getDatabase().prepare(`SELECT a.* FROM media_assets a WHERE a.id=? AND EXISTS (
+    row = getDatabase().prepare(`SELECT a.* FROM media_assets a WHERE a.id=?
+      AND a.owner_id=(SELECT id FROM owners ORDER BY created_at LIMIT 1) AND EXISTS (
       SELECT 1 FROM entries e WHERE e.owner_id=a.owner_id AND e.is_public=1
         AND COALESCE(json_extract(e.data,'$.status'),'saved')<>'draft'
         AND (json_extract(e.data,'$.assetId')=a.id OR json_extract(e.data,'$.coverAssetId')=a.id)
@@ -160,8 +173,9 @@ export async function getPublicAssetFile(id: string): Promise<Asset> {
     const ownerId = process.env.SUPABASE_OWNER_ID;
     if (ownerId) {
       const client = createSupabasePublicClient();
-      const result = await client.from("media_assets").select("id,owner_id,filename,mime_type,size,media_type,storage_path,created_at").eq("owner_id", ownerId).eq("id", id).maybeSingle();
-      checkError(result.error); row = result.data as unknown as AssetRow | undefined;
+      const result = await client.from("public_media_assets").select("id,mime_type,size,media_type,storage_extension,created_at").eq("id", id).maybeSingle();
+      checkError(result.error);
+      if (result.data) return publicAssetFromRow(result.data as PublicAssetRow, ownerId);
     }
   }
   if (!row) throw new AppError(404, "媒体不存在");
