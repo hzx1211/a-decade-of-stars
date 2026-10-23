@@ -20,6 +20,13 @@ async function save(page: Page) {
   await page.getByRole("dialog").getByTestId("entry-save").click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 }
+async function openAdvanced(page: Page, section: "整理记录" | "媒体与来源") {
+  const dialog=page.getByRole("dialog");
+  const toggle=dialog.getByRole("button",{name:"更多设置",exact:true});
+  if(await toggle.getAttribute("aria-expanded")==="false")await toggle.click();
+  await dialog.getByRole("button",{name:section,exact:true}).click();
+  return dialog;
+}
 async function mediaUpload(page: Page, name: string, mimeType: string, buffer: Buffer) {
   const dialog=page.getByRole("dialog");
   const upload = dialog.getByRole("button", {name: "上传新文件", exact: true});
@@ -74,12 +81,15 @@ test("desktop/mobile real creation, uploads, playback, lightbox, privacy and sel
   let dialog=await add(page,"journey",journeyTitle);
   await dialog.getByLabel("年份",{exact:true}).fill("2009");
   await dialog.getByLabel("内容",{exact:true}).fill("用户确认的起始年份。此为自动测试记录，不代表真实追星经历。");
+  await expect(dialog.getByLabel("标题",{exact:true})).toHaveValue(journeyTitle);
   await save(page);await expect(page.getByRole("heading",{name:journeyTitle,exact:true})).toBeVisible();
 
   await add(page,"music",musicTitle);await mediaUpload(page,`original-${suffix}.wav`,"audio/wav",originalWav());await save(page);
   await page.getByTestId("entry-card").filter({has:page.getByRole("button",{name:musicTitle,exact:true})}).getByRole("link",{name:"展开记忆"}).click();
+  await page.getByRole("button",{name:`播放${musicTitle}`,exact:true}).click();
   await provePlayback(page,"audio");await noOverflow(page);
   await page.getByRole("button",{name:"编辑记录",exact:true}).click();
+  await openAdvanced(page,"整理记录");
   await page.getByRole("dialog").getByLabel("个人笔记",{exact:true}).fill("编辑后保存仍然真实存在。");await save(page);
   await expect(page.getByText("编辑后保存仍然真实存在。",{exact:true})).toBeVisible();
   await page.screenshot({path:path.join(evidenceDirectory,`${suffix}-music-playback.png`),fullPage:true});
@@ -97,12 +107,13 @@ test("desktop/mobile real creation, uploads, playback, lightbox, privacy and sel
   await page.screenshot({path:path.join(evidenceDirectory,`${suffix}-photos.png`),fullPage:true});
 
   dialog=await add(page,"videos",`正规观看入口 · ${suffix}`);
+  await openAdvanced(page,"媒体与来源");
   await dialog.getByRole("combobox",{name:"播放来源",exact:true}).selectOption("external_link");
-  await dialog.getByLabel("正规平台链接",{exact:true}).fill("https://www.bilibili.com/");await save(page);
+  await dialog.getByLabel("平台链接",{exact:true}).fill("https://www.bilibili.com/");await save(page);
   const videoTitle=`原创星点短片 · ${suffix}`;
   const videoBytes=await originalWebm(page);dialog=await add(page,"videos",videoTitle);
-  await dialog.getByRole("combobox",{name:"播放来源",exact:true}).selectOption("authorized_upload");
-  await mediaUpload(page,`original-${suffix}.webm`,"video/webm",videoBytes);await save(page);
+  await mediaUpload(page,`original-${suffix}.webm`,"video/webm",videoBytes);
+  await dialog.getByRole("combobox",{name:"播放来源",exact:true}).selectOption("authorized_upload");await save(page);
   await page.getByTestId("entry-card").filter({has:page.getByRole("button",{name:videoTitle,exact:true})}).getByRole("link",{name:"展开记忆"}).click();
   await provePlayback(page,"video");await noOverflow(page);
   await page.screenshot({path:path.join(evidenceDirectory,`${suffix}-video-playback.png`),fullPage:true});
@@ -112,6 +123,7 @@ test("desktop/mobile real creation, uploads, playback, lightbox, privacy and sel
   await page.goto("/app/search");await page.getByLabel("搜索记录",{exact:true}).fill(journalTitle);await expect(page.getByRole("button",{name:journalTitle,exact:true})).toBeVisible();
 
   dialog=await add(page,"memory-book",bookTitle);
+  await dialog.getByRole("button",{name:/选择纪念册内容/}).click();
   await dialog.getByRole("checkbox",{name:`${photoTitle} 照片馆`,exact:true}).check();
   await dialog.getByRole("checkbox",{name:`${journeyTitle} 十余年星途`,exact:true}).check();await save(page);
   await page.getByTestId("entry-card").filter({has:page.getByRole("button",{name:bookTitle,exact:true})}).getByRole("button",{name:"纸张预览"}).click();
