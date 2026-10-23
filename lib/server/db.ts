@@ -14,12 +14,14 @@ export function getDatabase() {
   db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;
     CREATE TABLE IF NOT EXISTS owners(id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS sessions(token_hash TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(id) ON DELETE CASCADE, expires_at INTEGER NOT NULL);
-    CREATE TABLE IF NOT EXISTS entries(id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(id) ON DELETE CASCADE, kind TEXT NOT NULL CHECK(kind IN ('music','albums','videos','photos','journey','timeline','concerts','letters','journal','milestones','memory-book')), title TEXT NOT NULL CHECK(length(title)>0), data TEXT NOT NULL CHECK(json_valid(data)), favorite INTEGER NOT NULL DEFAULT 0 CHECK(favorite IN (0,1)), created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS entries(id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(id) ON DELETE CASCADE, kind TEXT NOT NULL CHECK(kind IN ('music','albums','videos','photos','journey','timeline','concerts','letters','journal','milestones','memory-book')), title TEXT NOT NULL CHECK(length(title)>0), data TEXT NOT NULL CHECK(json_valid(data)), favorite INTEGER NOT NULL DEFAULT 0 CHECK(favorite IN (0,1)), is_public INTEGER NOT NULL DEFAULT 0 CHECK(is_public IN (0,1)), created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
     CREATE INDEX IF NOT EXISTS entries_owner_kind ON entries(owner_id,kind);
     CREATE TABLE IF NOT EXISTS media_assets(id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(id) ON DELETE CASCADE, filename TEXT NOT NULL, mime_type TEXT NOT NULL, size INTEGER NOT NULL CHECK(size>0), media_type TEXT NOT NULL CHECK(media_type IN ('image','audio','video')), storage_path TEXT NOT NULL UNIQUE, metadata TEXT NOT NULL CHECK(json_valid(metadata)), created_at TEXT NOT NULL);
     CREATE INDEX IF NOT EXISTS assets_owner ON media_assets(owner_id);
     CREATE TABLE IF NOT EXISTS site_settings(owner_id TEXT PRIMARY KEY REFERENCES owners(id) ON DELETE CASCADE, settings TEXT NOT NULL CHECK(json_valid(settings)), updated_at TEXT NOT NULL);
   `);
+  const entryColumns = db.prepare("PRAGMA table_info(entries)").all() as {name: string}[];
+  if (!entryColumns.some(column => column.name === "is_public")) db.exec("ALTER TABLE entries ADD COLUMN is_public INTEGER NOT NULL DEFAULT 0 CHECK(is_public IN (0,1))");
   databases.set(directory, db);
   return db;
 }

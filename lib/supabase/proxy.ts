@@ -7,7 +7,7 @@ export async function refreshSupabaseSession(request: NextRequest) {
   if (process.env.DATA_MODE !== "supabase") return response;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL; const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) return response;
-  const client = createServerClient(url, key, {cookies: {
+  const client = createServerClient(url, key, {cookieOptions: {httpOnly: true, secure: process.env.APP_ORIGIN?.startsWith("https://") === true, sameSite: "lax", path: "/"}, cookies: {
     getAll() {return request.cookies.getAll();},
     setAll(values) {
       for (const {name, value} of values) request.cookies.set(name, value);

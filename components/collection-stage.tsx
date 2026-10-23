@@ -10,7 +10,7 @@ import {GlassLayers} from "./liquid-glass-effects";
 import {useMusicLibrary} from "./music-library";
 import "./collection-player.css";
 
-type StageProps = {kind: string; entries: Entry[]; assets: Asset[]; onOpen: (entry: Entry) => void; onAddAudio?: (entry: Entry) => void};
+type StageProps = {kind: string; entries: Entry[]; assets: Asset[]; onOpen: (entry: Entry) => void; onAddAudio?: (entry: Entry) => void; readOnly?: boolean};
 const ease = [.22, 1, .36, 1] as const;
 function clock(value: number) { const seconds = Math.max(0, Math.floor(Number.isFinite(value) ? value : 0)); return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`; }
 
@@ -51,7 +51,7 @@ export function CollectionStage(props: StageProps) {
 }
 
 /** A second control surface for the one global audio element, rather than a second player. */
-function VinylPlayer({entries, assets, onOpen, onAddAudio}: StageProps) {
+function VinylPlayer({entries, assets, onOpen, onAddAudio, readOnly = false}: StageProps) {
   const animated = useMotionPreference();
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -83,7 +83,7 @@ function VinylPlayer({entries, assets, onOpen, onAddAudio}: StageProps) {
   const armEngaged = selectedIsCurrent && (active || loading) && !error;
   const ended = selectedIsCurrent && !active && !loading && duration > 0 && time >= duration - .05;
   const status = external ? "网易云官方播放器" : !playable ? "等待你的音频" : error ? "播放遇到问题" : loading ? active ? "正在缓冲" : "正在载入音频" : active ? "正在播放" : ended ? "播放结束" : selectedIsCurrent ? "已暂停" : "可以播放";
-  const addAudio = () => (onAddAudio || onOpen)(current);
+  const addAudio = () => {if (!readOnly) (onAddAudio || onOpen)(current);};
 
   function choose(entry: Entry) {
     const shouldContinue = selectedIsCurrent && !!(music?.playing || music?.loading);
@@ -107,12 +107,12 @@ function VinylPlayer({entries, assets, onOpen, onAddAudio}: StageProps) {
     else music?.play(current.id);
   }
 
-  const action = loading ? <LoaderCircle size={20} className="ws-spin" /> : active ? <Pause size={20} fill="currentColor" /> : playable ? <Play size={20} fill="currentColor" /> : <Upload size={20} />;
+  const action = loading ? <LoaderCircle size={20} className="ws-spin" /> : active ? <Pause size={20} fill="currentColor" /> : playable ? <Play size={20} fill="currentColor" /> : readOnly ? <ListMusic size={20} /> : <Upload size={20} />;
   return <motion.section className={`collection-stage collection-stage-music collection-player ${animated ? "has-ambient-motion" : ""}`} aria-label="星轨唱片台" data-playing={spinning} data-motion-managed initial={animated ? {opacity: 0, y: 20} : false} animate={{opacity: 1, y: 0}} transition={{duration: animated ? .65 : 0, ease}}>
     <div className="collection-stage-art">
       <span className="collection-orbit collection-orbit-one" aria-hidden="true" /><span className="collection-orbit collection-orbit-two" aria-hidden="true" />
       <div className="collection-turntable">
-        <button type="button" className="collection-vinyl-button" disabled={!ready} aria-label={!playable ? `为${current.title}添加音频` : `${active || loading ? "暂停" : "播放"}唱片 ${current.title}`} aria-busy={loading} onClick={toggle}>
+        <button type="button" className="collection-vinyl-button" disabled={!ready || (readOnly && !playable)} aria-label={!playable ? readOnly ? `${current.title}暂未公开音频` : `为${current.title}添加音频` : `${active || loading ? "暂停" : "播放"}唱片 ${current.title}`} aria-busy={loading} onClick={toggle}>
           <span className="collection-record" aria-hidden="true"><span className="collection-record-grooves" /><span className="collection-record-label">{cover ? <img src={`/api/assets/${cover.id}`} alt="" /> : <VMark size={68} />}</span><span className="collection-record-spindle" /></span>
           <span className="collection-vinyl-action" aria-hidden="true">{action}</span>
         </button>
@@ -127,9 +127,9 @@ function VinylPlayer({entries, assets, onOpen, onAddAudio}: StageProps) {
         <div className="collection-transport"><button type="button" className="collection-step" aria-label="上一首唱片" disabled={!ready || !canStep} onClick={() => move(-1)}><ChevronLeft size={20} /></button><button type="button" className="collection-primary-action" disabled={!ready} aria-label={`唱片台${active || loading ? "暂停" : "播放"}${current.title}`} aria-busy={loading} onClick={toggle}>{action}<span>{loading ? "取消载入" : active ? "暂停播放" : ended ? "重新播放" : "开始播放"}</span></button><button type="button" className="collection-step" aria-label="下一首唱片" disabled={!ready || !canStep} onClick={() => move(1)}><ChevronRight size={20} /></button></div>
         <label className="collection-progress"><input aria-label="唱片台播放进度" aria-valuetext={`${clock(time)} / ${clock(duration)}`} type="range" min="0" max={duration || 1} step="0.1" value={Math.min(time, duration || 1)} disabled={!duration || !selectedIsCurrent} style={{"--range-fill": `${seekPercent}%`} as CSSProperties} onChange={event => music?.seek(Number(event.target.value))} /><span><time>{clock(time)}</time><time>{clock(duration)}</time></span></label>
         <div className="collection-volume-row"><Volume2 size={15} aria-hidden="true" /><input aria-label="唱片台音量" aria-valuetext={`${Math.round(volume * 100)}%`} type="range" min="0" max="1" step="0.01" value={volume} style={{"--range-fill": `${volume * 100}%`} as CSSProperties} onChange={event => music?.setVolume(Number(event.target.value))} /><span>{Math.round(volume * 100)}%</span><button type="button" className="collection-song-details" onClick={() => onOpen(current)}>歌曲资料<ArrowUpRight size={13} /></button></div>
-      </div> : <div className="collection-audio-empty"><p>添加音频，让唱片转起来</p><button type="button" className="collection-primary-action" onClick={addAudio}><Upload size={17} />添加音频</button><button type="button" className="collection-song-details" onClick={() => onOpen(current)}>歌曲资料<ArrowUpRight size={13} /></button></div>}
+      </div> : <div className="collection-audio-empty"><p>{readOnly ? "这首歌暂未公开可播放音频。" : "添加音频，让唱片转起来"}</p>{!readOnly && <button type="button" className="collection-primary-action" onClick={addAudio}><Upload size={17} />添加音频</button>}<button type="button" className="collection-song-details" onClick={() => onOpen(current)}>歌曲资料<ArrowUpRight size={13} /></button></div>}
       <MotionPresence show={!!error} className="collection-playback-error"><p role="alert">{error}</p></MotionPresence>
-      {!external && <button type="button" className="lyrics-open-button" disabled={!ready} onClick={() => music?.openLyrics(current.id)}><ListMusic size={18} />歌词<span>{current.data.lyrics?.trim() ? "跟着旋律，一起唱" : "添加歌词"}</span><ArrowUpRight size={15} /></button>}
+      {!external && (current.data.lyrics?.trim() || !readOnly) && <button type="button" className="lyrics-open-button" disabled={!ready} onClick={() => music?.openLyrics(current.id, readOnly)}><ListMusic size={18} />歌词<span>{current.data.lyrics?.trim() ? readOnly ? "查看歌词" : "跟着旋律，一起唱" : "添加歌词"}</span><ArrowUpRight size={15} /></button>}
       <div className="collection-player-library"><label><span>选一首歌</span><select disabled={!ready} aria-label="唱片台选曲" value={current.id} onChange={event => {const entry = entries.find(item => item.id === event.target.value); if (entry) choose(entry);}}>{entries.map((entry, entryIndex) => <option value={entry.id} key={entry.id}>{String(entryIndex + 1).padStart(2, "0")} · {entry.title}{playableIds.has(entry.id) ? "" : " · 待添加音频"}</option>)}</select></label><span className="collection-library-count">{String(index + 1).padStart(2, "0")}<small> / {String(entries.length).padStart(2, "0")}</small></span></div>
       {!playable && <div className="collection-browse-empty"><button type="button" aria-label="上一首唱片" disabled={entries.length < 2} onClick={() => move(-1)}><ChevronLeft size={16} />上一首</button><button type="button" aria-label="下一首唱片" disabled={entries.length < 2} onClick={() => move(1)}>下一首<ChevronRight size={16} /></button></div>}
     </div>

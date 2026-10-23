@@ -61,8 +61,8 @@ export const entryDataSchema = z.object({
   }
 });
 
-export const createEntrySchema = z.object({kind: z.enum(entryKinds), title: z.string().trim().min(1).max(300), data: entryDataSchema, favorite: z.boolean().optional()}).strict();
-export const patchEntrySchema = z.object({title: z.string().trim().min(1).max(300).optional(), data: entryDataSchema.optional(), favorite: z.boolean().optional()}).strict().refine(v => Object.keys(v).length > 0, "请提供需要更新的字段");
+export const createEntrySchema = z.object({kind: z.enum(entryKinds), title: z.string().trim().min(1).max(300), data: entryDataSchema, favorite: z.boolean().optional(), isPublic: z.boolean().optional()}).strict();
+export const patchEntrySchema = z.object({title: z.string().trim().min(1).max(300).optional(), data: entryDataSchema.optional(), favorite: z.boolean().optional(), isPublic: z.boolean().optional()}).strict().refine(v => Object.keys(v).length > 0, "请提供需要更新的字段");
 export const authSchema = z.object({email: z.email().max(254).transform(v => v.toLowerCase().trim()), password: z.string().min(12, "密码至少需要 12 个字符").max(256)}).strict();
 const modules = z.enum(["journey", "music", "videos", "photos", "journal", "concerts", "star-map"]);
 export const settingsSchema = z.object({
@@ -78,7 +78,7 @@ export const rightsSchema = z.object({
   licenseType: short.optional(), licenseNotes: z.string().max(10_000).optional(), attribution: short.optional(),
   allowedUseScope: z.array(z.enum(rightsScopes)).max(7).optional(),
 }).strict();
-export const backupEntrySchema = z.object({id, ownerId: z.string().optional(), kind: z.enum(entryKinds), title: z.string().trim().min(1).max(300), data: entryDataSchema, favorite: z.boolean(), createdAt: z.iso.datetime(), updatedAt: z.iso.datetime()}).strict();
+export const backupEntrySchema = z.object({id, ownerId: z.string().optional(), kind: z.enum(entryKinds), title: z.string().trim().min(1).max(300), data: entryDataSchema, favorite: z.boolean(), isPublic: z.boolean().optional(), createdAt: z.iso.datetime(), updatedAt: z.iso.datetime()}).strict();
 export const backupAssetSchema = z.object({id, ownerId: z.string().optional(), filename: z.string().max(255), mimeType: z.string().max(100), size: z.number().int().min(1), mediaType: z.enum(["image", "audio", "video"]), storagePath: z.string().max(500), sourceUrl: safeUrl.optional(), rightsHolder: short.optional(), rightsStatus: z.enum(["unknown", "personal_only", "licensed", "do_not_publish"]), licenseType: short.optional(), licenseNotes: z.string().max(10_000).optional(), attribution: short.optional(), allowedUseScope: z.array(z.enum(rightsScopes)).max(7), createdAt: z.iso.datetime()}).strict();
 export const backupSchema = z.object({version: z.literal(1), entries: z.array(backupEntrySchema).max(10000), settings: settingsSchema, assets: z.array(backupAssetSchema).max(10000), mediaFilesIncluded: z.literal(false).optional(), exportedAt: z.iso.datetime().optional()}).strict().superRefine((backup, ctx) => {
   if (new Set(backup.entries.map(e => e.id)).size !== backup.entries.length) ctx.addIssue({code: "custom", path: ["entries"], message: "备份中的记录 ID 不能重复"});

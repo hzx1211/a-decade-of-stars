@@ -14,6 +14,7 @@ type Props = {
   entry: Entry; cover?: Asset; music: MusicState;
   onSave: (id: string, source: string, offset: number) => Promise<Entry>;
   onClose: () => void;
+  readOnly?: boolean;
 };
 function clock(value: number) {
   const seconds = Math.max(0, Math.floor(Number.isFinite(value) ? value : 0));
@@ -27,7 +28,7 @@ export function LyricsPlayer(props: Props) {
   </Modal>;
 }
 
-function LyricsContent({entry, cover, music, onSave, busy, setBusy}: Props & {busy: boolean; setBusy: (value: boolean) => void}) {
+function LyricsContent({entry, cover, music, onSave, busy, setBusy, readOnly = false}: Props & {busy: boolean; setBusy: (value: boolean) => void}) {
   const animated = useMotionPreference();
   const [source, setSource] = useState(entry.data.lyrics || "");
   const [savedSource, setSavedSource] = useState(entry.data.lyrics || "");
@@ -119,16 +120,16 @@ function LyricsContent({entry, cover, music, onSave, busy, setBusy}: Props & {bu
       {!playable && <p className="lyrics-playback-note">先为这首歌添加音频，就能边听边看歌词。</p>}
       <MotionPresence show={isCurrent && !!music.error}><p className="lyrics-error" role="alert">{music.error}</p></MotionPresence>
     </div>
-    <div className="lyrics-reading">
-      <div className="lyrics-toolbar"><span><ListMusic size={17} />{editing ? "编辑歌词" : parsed.synced ? "同步歌词" : parsed.lines.length ? "文本歌词" : "歌词"}</span><div><button type="button" onClick={() => fileInput.current?.click()} disabled={busy} aria-label="导入歌词文件"><Upload size={16} />导入</button><button type="button" onClick={() => {setEditing(true); setError(""); setMessage("");}} disabled={busy || editing}><PencilLine size={16} />{savedSource ? "编辑" : "粘贴歌词"}</button></div></div>
-      <input ref={fileInput} className="lyrics-file-input" type="file" accept=".lrc,.txt" aria-label="选择歌词文件" onChange={event => void importFile(event)} disabled={busy} />
+    <div className="lyrics-reading" data-read-only={readOnly || undefined}>
+      <div className="lyrics-toolbar"><span><ListMusic size={17} />{editing ? "编辑歌词" : parsed.synced ? "同步歌词" : parsed.lines.length ? "文本歌词" : "歌词"}</span>{!readOnly && <div><button type="button" onClick={() => fileInput.current?.click()} disabled={busy} aria-label="导入歌词文件"><Upload size={16} />导入</button><button type="button" onClick={() => {setEditing(true); setError(""); setMessage("");}} disabled={busy || editing}><PencilLine size={16} />{savedSource ? "编辑" : "粘贴歌词"}</button></div>}</div>
+      {!readOnly && <input ref={fileInput} className="lyrics-file-input" type="file" accept=".lrc,.txt" aria-label="选择歌词文件" onChange={event => void importFile(event)} disabled={busy} />}
       <MotionSwap motionKey={editing ? "editor" : parsed.lines.length ? `lyrics-${savedSource}` : "empty"} className="lyrics-content-swap">
         {editing ? <form className="lyrics-editor" onSubmit={event => {event.preventDefault(); void save(source);}}><label htmlFor="lyrics-source">粘贴 LRC 或纯文本歌词</label><textarea autoFocus id="lyrics-source" value={source} maxLength={100_000} disabled={busy} onChange={event => setSource(event.target.value)} spellCheck={false} placeholder="粘贴歌词或带时间标签的 LRC" /><p>LRC 可同步播放，纯文本可直接阅读。清空后保存可移除歌词。</p><div><button type="button" onClick={cancelEditing} disabled={busy}>取消</button><button type="submit" className="lyrics-save" disabled={busy}><Check size={16} />保存歌词</button></div></form>
           : parsed.lines.length ? <div className="lyrics-scroll" ref={attachScrollArea} tabIndex={0} role="region" aria-label="歌词正文" onWheel={() => setFollowing(false)} onTouchMove={() => setFollowing(false)} onKeyDown={event => {if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(event.key)) setFollowing(false);}}><div className="lyrics-lines">{parsed.lines.map((line, index) => line.time !== null ? <button key={`${line.time}-${index}`} ref={node => {lineNodes.current[index] = node;}} className={`lyrics-line ${index === activeIndex ? "is-current" : ""} ${index < activeIndex ? "is-past" : ""}`} type="button" aria-current={index === activeIndex ? "true" : undefined} aria-label={`${clock(Math.max(0, line.time))} ${line.text || "间奏"}`} data-time={line.time} disabled={!isCurrent || !duration} title={isCurrent ? "点击跳转到这一句" : "播放后可点选歌词"} onClick={() => seekLine(line.time!)}><span>{line.text || <Disc3 size={24} aria-label="间奏" />}</span></button> : <p className="lyrics-line lyrics-text-line" key={index} ref={node => {lineNodes.current[index] = node;}}>{line.text}</p>)}</div></div>
-            : <div className="lyrics-empty"><span><ListMusic size={35} /></span><h4>把歌词也收藏进来</h4><p>导入 LRC，跟着旋律逐句亮起<br />也可以粘贴歌词，慢慢读</p><button type="button" className="lyrics-import-primary" disabled={busy} onClick={() => fileInput.current?.click()}><Upload size={17} />导入歌词</button><small>支持 LRC / TXT</small></div>}
+            : <div className="lyrics-empty"><span><ListMusic size={35} /></span><h4>{readOnly ? "这首歌还没有公开歌词" : "把歌词也收藏进来"}</h4><p>{readOnly ? "所有者公开精选歌词后，会显示在这里。" : <>导入 LRC，跟着旋律逐句亮起<br />也可以粘贴歌词，慢慢读</>}</p>{!readOnly && <><button type="button" className="lyrics-import-primary" disabled={busy} onClick={() => fileInput.current?.click()}><Upload size={17} />导入歌词</button><small>支持 LRC / TXT</small></>}</div>}
       </MotionSwap>
       <MotionPresence show={!following && parsed.synced && isCurrent && !editing} className="lyrics-follow"><button type="button" onClick={() => setFollowing(true)}><RotateCcw size={14} />回到当前歌词</button></MotionPresence>
-      {parsed.lines.length > 0 && !editing && <div className="lyrics-sync-bar">{parsed.synced ? <><span><Clock3 size={15} />歌词校准</span><div><button type="button" aria-label="歌词延后 0.5 秒" disabled={busy || offset <= -600_000} onClick={() => {setOffset(value => Math.max(-600_000, value - 500)); setMessage("");}}><Minus size={15} /></button><output aria-label="歌词时间偏移">{offset > 0 ? `提前 ${(offset / 1000).toFixed(1)}` : offset < 0 ? `延后 ${(-offset / 1000).toFixed(1)}` : "0.0"} 秒</output><button type="button" aria-label="歌词提前 0.5 秒" disabled={busy || offset >= 600_000} onClick={() => {setOffset(value => Math.min(600_000, value + 500)); setMessage("");}}><Plus size={15} /></button>{dirtyOffset && <button type="button" className="lyrics-save-offset" disabled={busy} onClick={() => void save(savedSource)}>保存校准</button>}</div></> : <p>导入 LRC 可同步歌词</p>}</div>}
+      {parsed.lines.length > 0 && !editing && <div className="lyrics-sync-bar">{parsed.synced ? <><span><Clock3 size={15} />{readOnly ? "歌词同步" : "歌词校准"}</span>{readOnly ? <output>{offset > 0 ? `提前 ${(offset / 1000).toFixed(1)}` : offset < 0 ? `延后 ${(-offset / 1000).toFixed(1)}` : "0.0"} 秒</output> : <div><button type="button" aria-label="歌词延后 0.5 秒" disabled={busy || offset <= -600_000} onClick={() => {setOffset(value => Math.max(-600_000, value - 500)); setMessage("");}}><Minus size={15} /></button><output aria-label="歌词时间偏移">{offset > 0 ? `提前 ${(offset / 1000).toFixed(1)}` : offset < 0 ? `延后 ${(-offset / 1000).toFixed(1)}` : "0.0"} 秒</output><button type="button" aria-label="歌词提前 0.5 秒" disabled={busy || offset >= 600_000} onClick={() => {setOffset(value => Math.min(600_000, value + 500)); setMessage("");}}><Plus size={15} /></button>{dirtyOffset && <button type="button" className="lyrics-save-offset" disabled={busy} onClick={() => void save(savedSource)}>保存校准</button>}</div>}</> : !readOnly && <p>导入 LRC 可同步歌词</p>}</div>}
       <MotionPresence show={busy || !!error || !!message} className="lyrics-feedback"><p className={error ? "lyrics-error" : ""} role={error ? "alert" : "status"}>{busy ? <><LoaderCircle size={15} className="ws-spin" />正在保存歌词…</> : error || <><Check size={15} />{message}</>}</p></MotionPresence>
     </div>
   </section>;

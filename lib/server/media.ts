@@ -18,8 +18,148 @@ import { assetReferences, validateReferences } from "./references";
 import { getDatabase, transaction } from "./db";
 
 const bucket = "private-media";
+type CloudClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+type Rights = z.infer<typeof rightsSchema>;
+const uploadIntentSchema = z.object({
+  filename: z.string().min(1).max(1024), mimeType: z.string().min(1).max(100),
+  size: z.number().int().positive().max(2 * 1024 * 1024 * 1024),
+  signature: z.string().min(4).max(5500).regex(/^[A-Za-z0-9+/]+={0,2}$/),
+  metadata: rightsSchema.optional(),
+}).strict();
+const intentIdSchema = z.object({intentId: z.uuid()}).strict();
+type UploadIntent = {id: string; owner_id: string; filename: string; mime_type: string; size: number; media_type: Asset["mediaType"]; storage_path: string; metadata: Rights; created_at: string; expires_at: string};
+
+function privateRights(mediaType: Asset["mediaType"], rights: Rights) {
+  const scopes: Asset["allowedUseScope"] = mediaType === "image" ? ["private_storage"] : ["private_storage", "private_playback"];
+  return {...rights, rightsStatus: rights.rightsStatus ?? "personal_only" as const, allowedUseScope: [...new Set([...(rights.allowedUseScope || []), ...scopes])]};
+}
+function cleanFilename(filename: string) {
+  return path.basename(filename.replaceAll("\\", "/")).replace(/[\x00-\x1f\x7f]/g, "").slice(0, 255);
+}
+export function cloudUploadLimit(mediaType: Asset["mediaType"], configured: number) {
+  const cloudMb = Number(process.env.CLOUD_UPLOAD_LIMIT_MB || 50);
+  if (!Number.isFinite(cloudMb) || cloudMb <= 0 || cloudMb > 50) throw new AppError(503, "云端上传限制配置无效，请设置不超过 50 MB 的 CLOUD_UPLOAD_LIMIT_MB");
+  return Math.min(uploadLimit(mediaType, configured), cloudMb * 1024 * 1024);
+}
+function assertCloudUploads() {
+  if (dataMode() !== "supabase") throw new AppError(400, "当前使用本地媒体上传");
+}
+async function existingAsset(ownerId: string, id: string) {
+  try {return await getAsset(ownerId, id);} catch (error) {if (error instanceof AppError && error.status === 404) return null; throw error;}
+}
+async function removeUploadIntent(client: CloudClient, ownerId: string, id: string) {
+  const {error} = await client.from("media_upload_intents").delete().eq("owner_id", ownerId).eq("id", id);
+  if (error) throw new AppError(502, "上传状态清理失败，请重试", "UPLOAD_CLEANUP_FAILED");
+}
+async function getUploadIntent(client: CloudClient, ownerId: string, id: string): Promise<UploadIntent> {
+  const {data, error} = await client.from("media_upload_intents").select("*").eq("owner_id", ownerId).eq("id", id).maybeSingle();
+  if (error) throw new AppError(502, "无法读取上传状态，请重试");
+  if (!data) throw new AppError(404, "上传状态不存在，请重新选择文件上传", "UPLOAD_INTENT_MISSING");
+  return data as UploadIntent;
+}
+
+// Only this small JSON request passes through the hosting function; file bytes go
+// directly to Storage. A signed upload cannot overwrite an existing object.
+export async function initializeAssetUpload(request: Request) {
+  assertSameOrigin(request); const owner = await requireApiOwner(); assertCloudUploads();
+  const input = uploadIntentSchema.parse(await readJson(request, 24 * 1024));
+  const filename = cleanFilename(input.filename);
+  const descriptor = identifyMedia(filename, input.mimeType, Buffer.from(input.signature, "base64"));
+  if (!descriptor) throw new AppError(415, "文件扩展名、MIME 类型或实际内容不匹配", "UNSUPPORTED_MEDIA");
+  const settings = await getSettings(owner.id);
+  const maximum = cloudUploadLimit(descriptor.mediaType, settings[`${descriptor.mediaType}LimitMb`]);
+  if (input.size > maximum) throw new AppError(413, `文件过大，此类媒体云端当前上限为 ${maximum / 1024 / 1024} MB`, "MEDIA_TOO_LARGE");
+  const id = randomUUID(); const storagePath = `${owner.id}/${id}.${descriptor.extension}`;
+  const now = new Date(); const expiresAt = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString();
+  const client = await createSupabaseServerClient();
+  const {error} = await client.from("media_upload_intents").insert({id, owner_id: owner.id, filename, mime_type: descriptor.mimeType, size: input.size, media_type: descriptor.mediaType, storage_path: storagePath, metadata: privateRights(descriptor.mediaType, input.metadata || {}), created_at: now.toISOString(), expires_at: expiresAt});
+  if (error) throw new AppError(502, "无法创建上传，请检查云端存储配置");
+  const signed = await client.storage.from(bucket).createSignedUploadUrl(storagePath, {upsert: false});
+  if (signed.error || !signed.data) {await removeUploadIntent(client, owner.id, id); throw new AppError(502, "无法创建上传地址，请检查云端存储权限");}
+  return {intentId: id, signedUrl: signed.data.signedUrl, mimeType: descriptor.mimeType, maximumBytes: maximum, expiresAt};
+}
+
+// Read a bounded prefix even if an upstream incorrectly ignores Range. Never
+// buffer an entire audio/video file in a serverless function for validation.
+async function readUploadSignature(response: Response, maximum: number) {
+  if (!response.body) throw new AppError(502, "媒体存储返回了空内容");
+  const reader = response.body.getReader(); const chunks: Uint8Array[] = []; let size = 0;
+  try {
+    for (;;) {
+      const {done, value} = await reader.read(); if (done) break;
+      size += value.byteLength;
+      if (size > maximum) throw new AppError(502, "媒体存储没有正确响应文件校验请求");
+      chunks.push(value);
+    }
+  } finally {await reader.cancel().catch(() => {});}
+  return Buffer.concat(chunks);
+}
+export async function completeAssetUpload(request: Request) {
+  assertSameOrigin(request); const owner = await requireApiOwner(); assertCloudUploads();
+  const {intentId} = intentIdSchema.parse(await readJson(request, 1024));
+  const alreadySaved = await existingAsset(owner.id, intentId);
+  if (alreadySaved) return {asset: alreadySaved};
+  const client = await createSupabaseServerClient();
+  const intent = await getUploadIntent(client, owner.id, intentId);
+  const storage = client.storage.from(bucket);
+  let descriptor: ReturnType<typeof identifyMedia>;
+  try {
+    if (intent.owner_id !== owner.id || intent.id !== intentId || !intent.storage_path.startsWith(`${owner.id}/${intentId}.`)) throw new AppError(409, "上传路径与授权不匹配");
+    if (!Number.isFinite(Date.parse(intent.expires_at)) || Date.parse(intent.expires_at) <= Date.now()) throw new AppError(410, "上传已过期，请重新上传", "UPLOAD_EXPIRED");
+    const settings = await getSettings(owner.id);
+    if (!Number.isSafeInteger(intent.size) || intent.size <= 0 || intent.size > cloudUploadLimit(intent.media_type, settings[`${intent.media_type}LimitMb`])) throw new AppError(413, "文件超过当前云端上传上限", "MEDIA_TOO_LARGE");
+    const {data: info, error} = await storage.info(intent.storage_path);
+    if (error || !info) throw new AppError(409, "文件尚未完成上传，请重新上传", "UPLOAD_NOT_FOUND");
+    const actualSize = Number(info.size ?? info.metadata?.size);
+    const actualMime = String(info.contentType ?? info.metadata?.mimetype ?? "").toLowerCase().split(";")[0].trim();
+    if (actualSize !== intent.size || actualMime !== intent.mime_type) throw new AppError(415, "云端文件大小或类型与上传声明不一致", "UPLOAD_CONTENT_MISMATCH");
+    const {data: signed, error: signError} = await storage.createSignedUrl(intent.storage_path, 60);
+    if (signError || !signed) throw new AppError(502, "无法校验云端文件，请重试");
+    const prefixEnd = Math.min(intent.size, 4096) - 1;
+    const upstream = await fetch(signed.signedUrl, {headers: {Range: `bytes=0-${prefixEnd}`}, signal: request.signal, cache: "no-store"});
+    if (upstream.status !== 206 || upstream.headers.get("content-range") !== `bytes 0-${prefixEnd}/${intent.size}`) {
+      await upstream.body?.cancel(); throw new AppError(502, "媒体存储没有正确响应文件校验请求");
+    }
+    const signature = await readUploadSignature(upstream, prefixEnd + 1);
+    descriptor = identifyMedia(intent.filename, intent.mime_type, signature);
+    if (!descriptor || descriptor.mediaType !== intent.media_type || descriptor.mimeType !== intent.mime_type || intent.storage_path !== `${owner.id}/${intentId}.${descriptor.extension}`) throw new AppError(415, "云端文件实际内容与上传类型不一致", "UPLOAD_CONTENT_MISMATCH");
+  } catch (error) {
+    // Preserve temporary files on transient storage errors so completion can be
+    // retried. Invalid or expired objects can never become library assets.
+    if (error instanceof AppError && [410, 413, 415].includes(error.status)) {
+      const cleanup = await storage.remove([intent.storage_path]);
+      if (!cleanup.error) await removeUploadIntent(client, owner.id, intentId);
+    }
+    throw error;
+  }
+  const rights = privateRights(descriptor.mediaType, rightsSchema.parse(intent.metadata));
+  const asset: Asset = {id: intentId, ownerId: owner.id, filename: intent.filename, mimeType: descriptor.mimeType, size: intent.size, mediaType: descriptor.mediaType, storagePath: intent.storage_path, ...rights, createdAt: intent.created_at};
+  try {await saveAsset(asset);} catch (error) {
+    // Two completion requests may race, or a response may be lost after INSERT.
+    const saved = await existingAsset(owner.id, intentId); if (!saved) throw error;
+    return {asset: saved};
+  }
+  // A saved asset remains usable even if deleting the temporary intent fails.
+  await removeUploadIntent(client, owner.id, intentId).catch(() => {});
+  return {asset};
+}
+export async function cancelAssetUpload(request: Request) {
+  assertSameOrigin(request); const owner = await requireApiOwner(); assertCloudUploads();
+  const {intentId} = intentIdSchema.parse(await readJson(request, 1024));
+  if (await existingAsset(owner.id, intentId)) return {ok: true, retained: true};
+  const client = await createSupabaseServerClient();
+  let intent: UploadIntent;
+  try {intent = await getUploadIntent(client, owner.id, intentId);} catch (error) {if (error instanceof AppError && error.status === 404) return {ok: true}; throw error;}
+  if (!intent.storage_path.startsWith(`${owner.id}/${intentId}.`)) throw new AppError(409, "上传路径与授权不匹配");
+  const {error} = await client.storage.from(bucket).remove([intent.storage_path]);
+  if (error) throw new AppError(502, "临时文件清理失败，请重试", "UPLOAD_CLEANUP_FAILED");
+  await removeUploadIntent(client, owner.id, intentId);
+  return {ok: true};
+}
+
 export async function uploadAsset(request: Request) {
   assertSameOrigin(request); const owner = await requireApiOwner(); const settings = await getSettings(owner.id);
+  if (dataMode() === "supabase") throw new AppError(400, "请使用云端直传上传媒体", "DIRECT_UPLOAD_REQUIRED");
   const maximum = Math.max(uploadLimit("image", settings.imageLimitMb), uploadLimit("audio", settings.audioLimitMb), uploadLimit("video", settings.videoLimitMb));
   if (!request.headers.get("content-type")?.startsWith("multipart/form-data")) throw new AppError(415, "上传必须使用 multipart/form-data");
   const contentLength = Number(request.headers.get("content-length") || 0);
@@ -45,14 +185,8 @@ export async function uploadAsset(request: Request) {
   // existing metadata without filling in claims the owner never supplied.
   const privateScopes = descriptor.mediaType === "image" ? ["private_storage"] : ["private_storage", "private_playback"];
   const asset: Asset = {id, ownerId: owner.id, filename, mimeType: descriptor.mimeType, mediaType: descriptor.mediaType, size: file.size, storagePath, ...rights, rightsStatus: rights.rightsStatus ?? "personal_only", allowedUseScope: [...new Set([...(rights.allowedUseScope || []), ...privateScopes])], createdAt: new Date().toISOString()};
-  if (dataMode() === "local") {
-    const destination = mediaPath(storagePath); await fsp.mkdir(path.dirname(destination), {recursive: true, mode: 0o700});
-    try {await fsp.writeFile(destination, Buffer.from(await file.arrayBuffer()), {flag: "wx", mode: 0o600}); if (request.signal.aborted) throw new AppError(499, "上传已取消"); await saveAsset(asset);} catch (error) {await fsp.unlink(destination).catch(() => {}); throw error;}
-  } else {
-    const client = await createSupabaseServerClient(); const {error} = await client.storage.from(bucket).upload(storagePath, file, {contentType: descriptor.mimeType, upsert: false});
-    if (error) throw new AppError(502, "云端上传失败，请核实 Storage 容量、策略和套餐限制");
-    try {if (request.signal.aborted) throw new AppError(499, "上传已取消"); await saveAsset(asset);} catch (error) {await client.storage.from(bucket).remove([storagePath]); throw error;}
-  }
+  const destination = mediaPath(storagePath); await fsp.mkdir(path.dirname(destination), {recursive: true, mode: 0o700});
+  try {await fsp.writeFile(destination, Buffer.from(await file.arrayBuffer()), {flag: "wx", mode: 0o600}); if (request.signal.aborted) throw new AppError(499, "上传已取消"); await saveAsset(asset);} catch (error) {await fsp.unlink(destination).catch(() => {}); throw error;}
   return {asset};
 }
 export async function updateAsset(request: Request, id: string) {

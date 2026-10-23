@@ -63,8 +63,13 @@
 .stage-landing-content h1 > span { display:block; font-family:Impact,"Arial Narrow",sans-serif; font-size:clamp(36px,5.2vw,74px); letter-spacing:2px; font-weight:400; line-height:1.05; }
 .stage-landing-motto { font-size:19px; letter-spacing:1.2px; color:#f2efe8; }
 .stage-landing-description { font-size:var(--type-body); line-height:1.9; color:#b8b3aa; margin:19px 0 27px; max-width:54ch; }
-.stage-enter { display:inline-flex; align-items:center; justify-content:space-between; gap:46px; min-height:44px; padding:12px 20px; background:#f1ede4; color:#222; font-size:var(--type-ui); font-weight:600; transition:background .2s; }
+.stage-landing-actions { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+.stage-enter { display:inline-flex; align-items:center; justify-content:space-between; gap:46px; min-height:48px; padding:12px 20px; background:#f1ede4; color:#222; font-size:var(--type-ui); font-weight:600; transition:background .2s, color .2s, translate .2s, scale .2s; }
 .stage-enter:hover { background:#a6d7f7; color:#102638; }
+.stage-enter:active, .stage-preview-link:active { scale:.98; }
+.stage-preview-link { display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:48px; padding:11px 16px; border:1px solid #d2e8ff45; color:#e3efff; font-size:var(--type-ui); transition:background .2s, border-color .2s, color .2s, translate .2s, scale .2s; }
+.stage-preview-link:hover { background:#ffffff12; border-color:#d2e8ff8a; color:#fff; translate:0 -2px; }
+.stage-preview-link:focus-visible { outline:2px solid #a6d7f7; outline-offset:3px; }
 .stage-landing-footer { position:relative; z-index:1; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:18px 28px; border-top:1px solid #fff3; padding-top:24px; color:#d3e1ed; font-size:var(--type-caption); line-height:1.8; }
 .stage-landing-footer > a { display:inline-flex; align-items:center; min-height:44px; padding:10px 14px; border:1px solid #d2e8ff30; border-radius:24px; background:#ffffff06; color:#e3efff; font-size:var(--type-ui); }
 .stage-landing-footer > a:hover { background:#ffffff14; border-color:#d2e8ff70; translate:0 -2px; }
@@ -142,7 +147,7 @@
   .ws-home-visual-preview-caption { font-size:var(--type-caption); }
   .ws-home-visual-preview-caption small { font-size:var(--type-caption); }
 }
-@media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } .stage-enter { transition:none; } }
+@media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } .stage-enter, .stage-preview-link { transition:none; } }
 
 /* Silver-blue carriage lines, with the poster's warm metal accents. */
 .stage-landing, .stage-login-story { background:linear-gradient(120deg,#0b1722 35%,#173140); }

@@ -1,14 +1,15 @@
 import "server-only";
 import type { Asset, Entry, EntryKind, SiteSettings } from "@/lib/types";
 import { defaultSettings } from "@/lib/types";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabasePublicClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { publicAssetIds, publicEntries, sanitizePublicAsset, sanitizePublicEntry, sanitizePublicSettings } from "@/lib/public-archive";
 import { dataMode } from "./config";
 import { getDatabase } from "./db";
 import { AppError } from "./errors";
 
-type EntryRow = {id: string; owner_id: string; kind: EntryKind; title: string; data: string | Entry["data"]; favorite: number | boolean; created_at: string; updated_at: string};
+type EntryRow = {id: string; owner_id: string; kind: EntryKind; title: string; data: string | Entry["data"]; favorite?: number | boolean; is_public?: number | boolean; created_at: string; updated_at: string};
 type AssetRow = {id: string; owner_id: string; filename: string; mime_type: string; size: number; media_type: Asset["mediaType"]; storage_path: string; metadata?: string; source_url?: string | null; rights_holder?: string | null; rights_status?: string; license_type?: string | null; license_notes?: string | null; attribution?: string | null; allowed_use_scope?: string[]; created_at: string};
-function entryFromRow(row: EntryRow): Entry {return {id: row.id, ownerId: row.owner_id, kind: row.kind, title: row.title, data: typeof row.data === "string" ? JSON.parse(row.data) : row.data, favorite: Boolean(row.favorite), createdAt: row.created_at, updatedAt: row.updated_at};}
+function entryFromRow(row: EntryRow): Entry {return {id: row.id, ownerId: row.owner_id, kind: row.kind, title: row.title, data: typeof row.data === "string" ? JSON.parse(row.data) : row.data, favorite: Boolean(row.favorite), isPublic: Boolean(row.is_public), createdAt: row.created_at, updatedAt: row.updated_at};}
 function assetFromRow(row: AssetRow): Asset {
   const metadata = row.metadata ? JSON.parse(row.metadata) : {sourceUrl: row.source_url || undefined, rightsHolder: row.rights_holder || undefined, rightsStatus: row.rights_status, licenseType: row.license_type || undefined, licenseNotes: row.license_notes || undefined, attribution: row.attribution || undefined, allowedUseScope: row.allowed_use_scope || []};
   return {id: row.id, ownerId: row.owner_id, filename: row.filename, mimeType: row.mime_type, size: row.size, mediaType: row.media_type, storagePath: row.storage_path, ...metadata, createdAt: row.created_at};
@@ -20,7 +21,7 @@ export function getLocalState(ownerId: string): {entries: Entry[]; assets: Asset
   const row = db.prepare("SELECT settings FROM site_settings WHERE owner_id=?").get(ownerId) as {settings: string} | undefined;
   return {entries, assets, settings: row ? {...defaultSettings, ...JSON.parse(row.settings)} : {...defaultSettings}};
 }
-export function entryToRow(entry: Entry) {return {id: entry.id, owner_id: entry.ownerId, kind: entry.kind, title: entry.title, data: entry.data, favorite: entry.favorite, created_at: entry.createdAt, updated_at: entry.updatedAt};}
+export function entryToRow(entry: Entry) {return {id: entry.id, owner_id: entry.ownerId, kind: entry.kind, title: entry.title, data: entry.data, favorite: entry.favorite, is_public: entry.isPublic ?? false, created_at: entry.createdAt, updated_at: entry.updatedAt};}
 export function assetToRow(asset: Asset) {return {id: asset.id, owner_id: asset.ownerId, filename: asset.filename, mime_type: asset.mimeType, size: asset.size, media_type: asset.mediaType, storage_path: asset.storagePath, source_url: asset.sourceUrl || null, rights_holder: asset.rightsHolder || null, rights_status: asset.rightsStatus, license_type: asset.licenseType || null, license_notes: asset.licenseNotes || null, attribution: asset.attribution || null, allowed_use_scope: asset.allowedUseScope, created_at: asset.createdAt};}
 function checkError(error: {message: string; code?: string} | null) {if (error) {console.error("[private-museum] Storage request:", error.code || "unknown"); throw new AppError(500, "数据库操作失败，请检查服务配置或重试");}}
 export async function getEntries(ownerId: string, kind?: EntryKind, q?: string): Promise<Entry[]> {
@@ -46,12 +47,12 @@ export async function getEntry(ownerId: string, id: string): Promise<Entry> {
   if (!data) throw new AppError(404, "记录不存在"); return entryFromRow(data as EntryRow);
 }
 export function saveLocalEntry(entry: Entry) {
-  getDatabase().prepare("INSERT INTO entries(id,owner_id,kind,title,data,favorite,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET title=excluded.title,data=excluded.data,favorite=excluded.favorite,updated_at=excluded.updated_at WHERE entries.owner_id=excluded.owner_id AND entries.kind=excluded.kind").run(entry.id, entry.ownerId, entry.kind, entry.title, JSON.stringify(entry.data), Number(entry.favorite), entry.createdAt, entry.updatedAt);
+  getDatabase().prepare("INSERT INTO entries(id,owner_id,kind,title,data,favorite,is_public,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET title=excluded.title,data=excluded.data,favorite=excluded.favorite,is_public=excluded.is_public,updated_at=excluded.updated_at WHERE entries.owner_id=excluded.owner_id AND entries.kind=excluded.kind").run(entry.id, entry.ownerId, entry.kind, entry.title, JSON.stringify(entry.data), Number(entry.favorite), Number(entry.isPublic ?? false), entry.createdAt, entry.updatedAt);
 }
 export async function saveEntry(entry: Entry, insert = false) {
   if (dataMode() === "local") {saveLocalEntry(entry); return;}
   const client = await createSupabaseServerClient(); const row = entryToRow(entry);
-  const {error} = insert ? await client.from("entries").insert(row) : await client.from("entries").update({title: row.title, data: row.data, favorite: row.favorite, updated_at: row.updated_at}).eq("id", entry.id).eq("owner_id", entry.ownerId);
+  const {error} = insert ? await client.from("entries").insert(row) : await client.from("entries").update({title: row.title, data: row.data, favorite: row.favorite, is_public: row.is_public, updated_at: row.updated_at}).eq("id", entry.id).eq("owner_id", entry.ownerId);
   checkError(error);
 }
 export async function removeEntry(ownerId: string, id: string) {
@@ -86,6 +87,87 @@ export async function getSettings(ownerId: string): Promise<SiteSettings> {
   if (dataMode() === "local") {const row = getDatabase().prepare("SELECT settings FROM site_settings WHERE owner_id=?").get(ownerId) as {settings: string} | undefined; return row ? {...defaultSettings, ...JSON.parse(row.settings)} : {...defaultSettings};}
   const client = await createSupabaseServerClient(); const {data, error} = await client.from("site_settings").select("settings").eq("owner_id", ownerId).maybeSingle(); checkError(error); return {...defaultSettings, ...data?.settings};
 }
+
+export async function getPublicState(): Promise<{entries: Entry[]; assets: Asset[]; settings: SiteSettings}> {
+  let entries: Entry[] = [];
+  let assets: Asset[] = [];
+  let settings: SiteSettings = {...defaultSettings};
+
+  if (dataMode() === "local") {
+    const db = getDatabase();
+    const owner = db.prepare("SELECT id FROM owners ORDER BY created_at LIMIT 1").get() as {id: string} | undefined;
+    if (!owner) return {entries, assets, settings};
+    const rows = db.prepare("SELECT * FROM entries WHERE owner_id=? AND is_public=1 AND COALESCE(json_extract(data,'$.status'),'saved')<>'draft' ORDER BY created_at DESC").all(owner.id) as unknown as EntryRow[];
+    const selected = rows.map(entryFromRow);
+    const ids = [...publicAssetIds(selected)];
+    const assetRows = ids.length
+      ? db.prepare(`SELECT * FROM media_assets WHERE owner_id=? AND id IN (${ids.map(() => "?").join(",")}) ORDER BY created_at DESC`).all(owner.id, ...ids)
+      : [];
+    const settingsRow = db.prepare("SELECT settings FROM site_settings WHERE owner_id=?").get(owner.id) as {settings: string} | undefined;
+    const visibleIds = new Set(selected.map(entry => entry.id));
+    entries = publicEntries(selected).map(entry => sanitizePublicEntry(entry, visibleIds));
+    assets = (assetRows as unknown as AssetRow[]).map(assetFromRow).map(sanitizePublicAsset);
+    settings = sanitizePublicSettings(settingsRow ? {...defaultSettings, ...JSON.parse(settingsRow.settings)} : {...defaultSettings}, entries, assets);
+    return {entries, assets, settings};
+  }
+
+  const ownerId = process.env.SUPABASE_OWNER_ID;
+  if (!ownerId) return {entries, assets, settings};
+  const client = createSupabasePublicClient();
+  const [entryResult, assetResult, settingsResult] = await Promise.all([
+    client.from("public_entries").select("*").eq("owner_id", ownerId).order("created_at", {ascending: false}),
+    client.from("media_assets").select("id,owner_id,filename,mime_type,size,media_type,storage_path,created_at").eq("owner_id", ownerId).order("created_at", {ascending: false}),
+    client.from("public_site_settings").select("settings").eq("owner_id", ownerId).maybeSingle(),
+  ]);
+  checkError(entryResult.error); checkError(assetResult.error); checkError(settingsResult.error);
+  const selected = ((entryResult.data || []) as EntryRow[]).map(entryFromRow);
+  const ids = publicAssetIds(selected);
+  const visibleIds = new Set(selected.map(entry => entry.id));
+  entries = publicEntries(selected).map(entry => sanitizePublicEntry(entry, visibleIds));
+  assets = ((assetResult.data || []) as AssetRow[]).map(assetFromRow).filter(asset => ids.has(asset.id)).map(sanitizePublicAsset);
+  const rawSettings = settingsResult.data?.settings;
+  settings = sanitizePublicSettings({...defaultSettings, ...(typeof rawSettings === "string" ? JSON.parse(rawSettings) : rawSettings)}, entries, assets);
+  return {entries, assets, settings};
+}
+
+export async function getPublicEntries(): Promise<Entry[]> {
+  return (await getPublicState()).entries;
+}
+
+export async function getPublicEntry(id: string): Promise<Entry> {
+  const entry = (await getPublicEntries()).find(item => item.id === id);
+  if (!entry) throw new AppError(404, "记录不存在");
+  return entry;
+}
+
+export async function getPublicAssets(): Promise<Asset[]> {
+  return (await getPublicState()).assets;
+}
+
+export async function getPublicSettings(): Promise<SiteSettings> {
+  return (await getPublicState()).settings;
+}
+
+export async function getPublicAssetFile(id: string): Promise<Asset> {
+  let row: AssetRow | undefined;
+  if (dataMode() === "local") {
+    row = getDatabase().prepare(`SELECT a.* FROM media_assets a WHERE a.id=? AND EXISTS (
+      SELECT 1 FROM entries e WHERE e.owner_id=a.owner_id AND e.is_public=1
+        AND COALESCE(json_extract(e.data,'$.status'),'saved')<>'draft'
+        AND (json_extract(e.data,'$.assetId')=a.id OR json_extract(e.data,'$.coverAssetId')=a.id)
+    )`).get(id) as unknown as AssetRow | undefined;
+  } else {
+    const ownerId = process.env.SUPABASE_OWNER_ID;
+    if (ownerId) {
+      const client = createSupabasePublicClient();
+      const result = await client.from("media_assets").select("id,owner_id,filename,mime_type,size,media_type,storage_path,created_at").eq("owner_id", ownerId).eq("id", id).maybeSingle();
+      checkError(result.error); row = result.data as unknown as AssetRow | undefined;
+    }
+  }
+  if (!row) throw new AppError(404, "媒体不存在");
+  return assetFromRow(row);
+}
+
 export function saveLocalSettings(ownerId: string, settings: SiteSettings) {
   getDatabase().prepare("INSERT INTO site_settings(owner_id,settings,updated_at) VALUES(?,?,?) ON CONFLICT(owner_id) DO UPDATE SET settings=excluded.settings,updated_at=excluded.updated_at").run(ownerId, JSON.stringify(settings), new Date().toISOString());
 }

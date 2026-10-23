@@ -48,7 +48,10 @@
   "exclude": [
     "node_modules",
     ".npm-cache",
-    ".next-test",
+    ".vercel",
+    ".data",
+    "output",
+    ".next-test*",
     ".test-data",
     "test-results",
     "playwright-report"

@@ -44,6 +44,7 @@
 .stage-site.starsea-site .archive-navigation .icon-button[aria-current="page"] { color: #b4e4ff; background: #4b7dff1b; }
 .stage-site.starsea-site .archive-navigation :is(a, button):focus-visible { outline: 2px solid #9ed5ff; outline-offset: 5px; border-radius: 3px; }
 .stage-site.starsea-site .archive-navigation .nav-search { width: auto; min-width: 44px; flex-basis: auto; gap: 8px; padding: 0 9px; font-size: var(--type-ui); }
+.stage-site.starsea-site .archive-navigation .owner-login { width: auto; min-width: 76px; flex: 0 0 auto; gap: 8px; padding: 0 10px; font-size: var(--type-ui); line-height: 1; white-space: nowrap; }
 .stage-site.starsea-site .archive-navigation .nav-utility-rule { height: 17px; width: 1px; background: var(--nav-rule); margin: 0 9px 0 5px; }
 .stage-site.starsea-site .archive-navigation .logout-button { display: inline-flex; }
 .stage-site.starsea-site .archive-navigation .mobile-toggle { display: none; }
@@ -124,6 +125,8 @@
   .stage-site.starsea-site .archive-navigation .stage-wordmark small { font-size: var(--type-caption); letter-spacing: .1px; margin-top: 4px; }
   .stage-site.starsea-site .archive-navigation .nav-actions { gap: 3px; }
   .stage-site.starsea-site .archive-navigation .icon-button { width: 30px; }
+  .stage-site.starsea-site .archive-navigation .owner-login { width: 44px; min-width: 44px; flex: 0 0 44px; padding: 0; }
+  .stage-site.starsea-site .archive-navigation .owner-login > span { display: none; }
   .stage-site.starsea-site .archive-navigation .settings-link { display: none; }
   .stage-site.starsea-site .archive-navigation .nav-utility-rule { margin: 0 4px; }
   .stage-site.starsea-site .archive-navigation .mobile-toggle { width: 44px; margin-left: 4px; }

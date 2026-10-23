@@ -24,6 +24,13 @@ export function LoginForm({ setupRequired }: { setupRequired: boolean; mode: str
     <label className="ws-field">密码<div className="ws-password"><input type={visible ? "text" : "password"} name="password" autoComplete={setupRequired ? "new-password" : "current-password"} minLength={setupRequired ? 12 : 1} value={password} onChange={event => setPassword(event.target.value)} required placeholder={setupRequired ? "至少 12 位，建议使用完整句子" : "输入你的私人密码"} disabled={pending} /><button type="button" className="ws-icon-button" aria-label={visible ? "隐藏密码" : "显示密码"} aria-pressed={visible} onClick={() => setVisible(value => !value)} disabled={pending}><MotionSwap motionKey={visible ? "visible" : "hidden"} as="span" className="control-icon-swap">{visible ? <EyeOff size={18} /> : <Eye size={18} />}</MotionSwap></button></div></label>
     <MotionPresence show={!!error}><p className="ws-error" role="alert">{error}</p></MotionPresence>
     <button type="submit" className="ws-button ws-login-submit" disabled={pending} aria-busy={pending}><MotionSwap motionKey={pending ? "pending" : "ready"} as="span" className="login-submit-content">{pending ? <LoaderCircle size={18} className="ws-spin" /> : <ArrowRight size={18} />}{pending ? "正在验证…" : setupRequired ? "创建我的私人纪念馆" : "进入纪念馆"}</MotionSwap></button>
-    {!setupRequired && <p className="ws-tiny"><Link href="/auth/reset-password">忘记密码</Link></p>}
+    <div className="ws-login-links">
+      <Link href="/app/dashboard" className="ws-guest-entry">
+        <Eye size={18} aria-hidden="true" />
+        <span><strong>以访客身份浏览</strong><small>仅查看已公开的精选内容</small></span>
+        <ArrowRight size={16} aria-hidden="true" />
+      </Link>
+      {!setupRequired && <p className="ws-tiny"><Link href="/auth/reset-password">忘记密码</Link></p>}
+    </div>
   </form>;
 }

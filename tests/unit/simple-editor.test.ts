@@ -29,8 +29,8 @@ describe("progressive private entry editor", () => {
   it("offers a title-only path without requiring dates, media or provenance fields", async () => {
     const fetcher = respond(base);
     const {onSaved} = editor();
-    expect(document.querySelectorAll("input,select,textarea").length).toBe(3);
-    expect(screen.queryByRole("checkbox")).toBeNull();
+    expect(document.querySelectorAll("input,select,textarea").length).toBe(4);
+    expect((screen.getByRole("checkbox", {name: /允许访客查看这份精选/}) as HTMLInputElement).checked).toBe(false);
     expect(screen.queryByLabelText("素材权利人")).toBeNull();
     expect(screen.queryByLabelText("分类")).toBeNull();
     fireEvent.change(screen.getByLabelText("标题", {exact: true}), {target: {value: base.title}});

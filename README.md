@@ -47,6 +47,6 @@ Next.js App Router、React、TypeScript、Zod、Lucide；本地通过服务端 `
 
 目录：`app/` 路由和 API，`components/` 工作区与播放器，`lib/server/` 身份与数据操作，`lib/validation/` 校验，`supabase/migrations/` PostgreSQL/RLS/Storage，`tests/` 自动化测试，`docs/` 运维说明。
 
-云端步骤：创建 Supabase 项目 → 关闭公开注册 → 受控创建 Auth 所有者 → 应用 SQL 迁移 → 将该用户 UUID 加入 `profiles` → 配置 `.env.local` 的云端变量并设置 `DATA_MODE=supabase`。**不能只改 DATA_MODE 就完成迁移**；本地数据不会自动上传云端。详见 [部署](docs/DEPLOYMENT.md)。没有有效 Supabase 凭证时，不把本地或模拟 PostgreSQL 测试称为云端验证。
+云端部署要求 Node.js 22.13+（Vercel 可选择 Node.js 24），并设置 `DATA_MODE=supabase`、`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`、服务端 `SUPABASE_OWNER_ID`、规范 HTTPS `APP_ORIGIN` 和不超过 50 MB 的 `CLOUD_UPLOAD_LIMIT_MB`。运行应用不需要 `service_role`。按时间顺序应用 `supabase/migrations/` 全部六份迁移；先受控创建唯一 Auth 所有者，再应用数据库层注册保护迁移。最后两份迁移负责阻断额外 Auth 用户并在事务提交时验证所有者注册状态。所有内容和媒体访问都要求所有者认证，记录上的 `isPublic` 标记不会开放匿名读取。Vercel 不会自动应用数据库迁移，也不会自动搬运本地 SQLite、JSON 备份或媒体文件；详见 [部署](docs/DEPLOYMENT.md)。没有有效 Supabase 凭证时，不把本地或模拟 PostgreSQL 测试称为云端验证。
 
 文档：[数据模型](docs/DATA_MODEL.md) · [安全](docs/SECURITY.md) · [媒体上传](docs/MEDIA_UPLOAD.md) · [素材权利](docs/CONTENT_RIGHTS.md) · [部署](docs/DEPLOYMENT.md) · [备份恢复](docs/BACKUP_RESTORE.md) · [测试](docs/TESTING.md)。

@@ -22,7 +22,7 @@ async function prepareRestore(ownerId: string, backup: Backup) {
   const entries: Entry[] = backup.entries.map(incoming => {
     const existing = entriesById.get(incoming.id);
     if (existing && existing.kind !== incoming.kind) throw new AppError(400, "恢复不能改变已有记录的类型");
-    return {...incoming, ownerId, createdAt: existing?.createdAt || incoming.createdAt, updatedAt: new Date().toISOString()};
+    return {...incoming, ownerId, isPublic: incoming.isPublic ?? false, createdAt: existing?.createdAt || incoming.createdAt, updatedAt: new Date().toISOString()};
   });
   const missingMedia: string[] = []; const assets: Asset[] = [];
   for (const incoming of backup.assets) {

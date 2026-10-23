@@ -7,10 +7,13 @@ import {importEntryPayload} from "../../lib/media-import";
 
 const identity = vi.hoisted(() => ({authenticated: true, id: "10000000-0000-4000-8000-000000000001"}));
 vi.mock("server-only", () => ({}));
-vi.mock("../../lib/server/auth", () => ({requireApiOwner: async () => {
-  if (!identity.authenticated) throw Object.assign(new Error("需要登录"), {status: 401});
-  return {id: identity.id, email: "synthetic@example.test"};
-}}));
+vi.mock("../../lib/server/auth", () => ({
+  currentOwner: async () => identity.authenticated ? {id: identity.id, email: "synthetic@example.test"} : null,
+  requireApiOwner: async () => {
+    if (!identity.authenticated) throw Object.assign(new Error("需要登录"), {status: 401});
+    return {id: identity.id, email: "synthetic@example.test"};
+  },
+}));
 
 import {getDatabase} from "../../lib/server/db";
 import {mediaPath} from "../../lib/server/config";

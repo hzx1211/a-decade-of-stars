@@ -5,6 +5,7 @@ import { AppError } from "./errors";
 export function dataMode(): "local" | "supabase" {
   const mode = process.env.DATA_MODE || "local";
   if (mode !== "local" && mode !== "supabase") throw new AppError(503, "DATA_MODE 配置无效");
+  if (process.env.VERCEL && mode === "local") throw new AppError(503, "云部署需要配置 Supabase 数据库和私有媒体存储", "CLOUD_STORAGE_REQUIRED");
   return mode;
 }
 // Persistent private data is a runtime volume. It must never enter the deployment file trace.

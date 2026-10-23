@@ -2,6 +2,8 @@ import "server-only";
 import {lstat, open, realpath} from "node:fs/promises";
 import path from "node:path";
 import {AppError} from "./errors";
+import {dataMode} from "./config";
+import {readCloudThemeFile, readPrivateThemeBytes, type PrivateImageMedia} from "./theme-media";
 
 const maximumFrames = 6;
 const maximumManifestBytes = 64 * 1024;
@@ -46,11 +48,14 @@ async function openGeneratedFile(filename: string, maximumBytes: number) {
 }
 
 async function readManifest(): Promise<Frame[]> {
-  const file = await openGeneratedFile("manifest.json", maximumManifestBytes);
-  if (!file) return [];
+  const cloud = dataMode() === "supabase";
+  const file = cloud ? null : await openGeneratedFile("manifest.json", maximumManifestBytes);
+  const media = cloud ? await readCloudThemeFile("starsea-v2/manifest.json", maximumManifestBytes) : null;
+  if (!file && !media) return [];
+  if (media && media.contentType !== "application/json") {await media.stream.cancel(); return [];}
   try {
     let value: unknown;
-    try {value = JSON.parse(await file.readFile({encoding: "utf8"}));}
+    try {value = JSON.parse(media ? (await readPrivateThemeBytes(media, maximumManifestBytes)).toString("utf8") : await file!.readFile({encoding: "utf8"}));}
     catch (error) {if (error instanceof SyntaxError) return []; throw error;}
     if (!value || typeof value !== "object" || !("version" in value) || value.version !== 1 || !("frames" in value) || !Array.isArray(value.frames)) return [];
     const frames: Frame[] = [];
@@ -61,7 +66,7 @@ async function readManifest(): Promise<Frame[]> {
       frames.push({file: entry.file, label: typeof entry.label === "string" ? entry.label.trim().slice(0, 120) : "星海"});
     }
     return frames;
-  } finally {await file.close();}
+  } finally {await file?.close();}
 }
 
 function imageContentType(filename: string, header: Buffer) {
@@ -72,7 +77,23 @@ function imageContentType(filename: string, header: Buffer) {
   return null;
 }
 
-async function readFrame(file: string, includeBytes: boolean) {
+async function readFrame(file: string, includeBytes: boolean): Promise<PrivateImageMedia | null> {
+  if (dataMode() === "supabase") {
+    const media = await readCloudThemeFile(`starsea-v2/${file}`, maximumFrameBytes);
+    if (!media) return null;
+    const reader = media.stream.getReader(); const chunks: Uint8Array[] = []; let length = 0;
+    try {
+      while (length < 12) {const {value, done} = await reader.read(); if (done) break; chunks.push(value); length += value.byteLength;}
+      const prefix = Buffer.concat(chunks); const contentType = imageContentType(file, prefix);
+      if (!contentType || contentType !== media.contentType || !includeBytes) {await reader.cancel(); return contentType === media.contentType ? {bytes: Buffer.alloc(0), contentType} : null;}
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {controller.enqueue(prefix);},
+        async pull(controller) {try {const {value, done} = await reader.read(); if (done) controller.close(); else controller.enqueue(value);} catch (error) {controller.error(error);}},
+        cancel(reason) {return reader.cancel(reason);},
+      });
+      return {stream, contentType, size: media.size};
+    } catch (error) {await reader.cancel().catch(() => {}); throw error;}
+  }
   const handle = await openGeneratedFile(file, maximumFrameBytes);
   if (!handle) return null;
   try {
@@ -85,10 +106,8 @@ async function readFrame(file: string, includeBytes: boolean) {
 }
 
 export async function readStarseaFrameManifest(): Promise<StarseaFrameManifest> {
-  const frames: StarseaFrameManifest["frames"] = [];
-  for (const frame of await readManifest()) {
-    if (await readFrame(frame.file, false)) frames.push({src: `/api/starsea-frames/${frame.file}`, label: frame.label});
-  }
+  const available = await Promise.all((await readManifest()).map(async frame => await readFrame(frame.file, false) ? {src: `/api/starsea-frames/${frame.file}`, label: frame.label} : null));
+  const frames = available.filter((frame): frame is NonNullable<typeof frame> => frame !== null);
   return {version: 1, frames};
 }
 

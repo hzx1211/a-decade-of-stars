@@ -5,6 +5,9 @@ const config: NextConfig = {
   distDir: process.env.STARS_NEXT_DIST_DIR || ".next",
   serverExternalPackages: ["node:sqlite"],
   poweredByHeader: false,
+  env: {
+    NEXT_PUBLIC_DATA_MODE: process.env.DATA_MODE === "supabase" ? "supabase" : "local",
+  },
   outputFileTracingIncludes: {
     "/api/artist-portrait": ["./assets/licensed/zhang-jie.jpg"],
   },

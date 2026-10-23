@@ -20,7 +20,7 @@ export async function listEntries(request: Request) {
 }
 export async function createEntry(request: Request) {
   assertSameOrigin(request); const owner = await requireApiOwner(); const input = createEntrySchema.parse(await readJson(request));
-  const now = new Date().toISOString(); const entry: Entry = {id: randomUUID(), ownerId: owner.id, kind: input.kind, title: input.title, data: input.data, favorite: input.favorite || false, createdAt: now, updatedAt: now};
+  const now = new Date().toISOString(); const entry: Entry = {id: randomUUID(), ownerId: owner.id, kind: input.kind, title: input.title, data: input.data, favorite: input.favorite || false, isPublic: input.isPublic ?? false, createdAt: now, updatedAt: now};
   if (dataMode() === "local") {transaction(() => {const {entries, assets} = getLocalState(owner.id); validateReferences(entry, entries, assets); saveLocalEntry(entry);});}
   else {const [entries, assets] = await Promise.all([getEntries(owner.id), getAssets(owner.id)]); validateReferences(entry, entries, assets); await saveEntry(entry, true);}
   return {entry};

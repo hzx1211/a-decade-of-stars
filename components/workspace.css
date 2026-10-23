@@ -13,3 +13,9 @@
 .ws-audio-art>div{min-width:0;overflow-wrap:anywhere}
 @media(max-width:600px){.ws-modal .ws-lightbox>.ws-lightbox-frame{flex:1 1 100%;order:-1}.ws-modal .ws-lightbox>.ws-icon-button{flex:0 0 44px}.ws-modal .ws-lightbox{justify-content:center}}
 @media print{.stage-site.starsea-site .ws-modal:has(.ws-print-root){display:block;overflow:visible;max-height:none}.stage-site.starsea-site .ws-modal>.ws-modal-body:has(.ws-print-root){max-height:none;height:auto;overflow:visible}}
+.workspace-readonly .secondary-calendar .ws-calendar-head .ws-button-secondary,
+.workspace-readonly .secondary-journey > .ws-toolbar .ws-button-secondary,
+.workspace-readonly .secondary-journey .ws-year-empty .ws-link-button,
+.workspace-readonly .secondary-journey > .ws-note .ws-link-button {
+  display: none;
+}

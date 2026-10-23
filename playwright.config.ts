@@ -14,7 +14,7 @@ export default defineConfig({
   use: {baseURL: "http://127.0.0.1:3001", actionTimeout:15_000, navigationTimeout:30_000, trace: "retain-on-failure", screenshot: "only-on-failure", launchOptions: {executablePath}},
   projects: [
     {name: "desktop", use: {...devices["Desktop Chrome"]}},
-    {name: "mobile", testMatch: /workspace\.spec\.ts/, use: {...devices["Pixel 7"]}},
+    {name: "mobile", testMatch: /(?:workspace|public-access)\.spec\.ts/, use: {...devices["Pixel 7"]}},
   ],
   webServer: {
     command: "node node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3001",

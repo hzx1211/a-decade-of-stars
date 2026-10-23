@@ -20,7 +20,7 @@ function entryImage(entry: Entry) {
   return entry.data.coverAssetId || (entry.kind === "photos" ? entry.data.assetId : undefined);
 }
 
-export function Dashboard({ entries, settings, themeMediaAvailable = false, beidouMediaAvailable = themeMediaAvailable }: { entries: Entry[]; settings: SiteSettings; themeMediaAvailable?: boolean; beidouMediaAvailable?: boolean }) {
+export function Dashboard({ entries, settings, themeMediaAvailable = false, beidouMediaAvailable = themeMediaAvailable, readOnly = false }: { entries: Entry[]; settings: SiteSettings; themeMediaAvailable?: boolean; beidouMediaAvailable?: boolean; readOnly?: boolean }) {
   const currentYear = Number(new Intl.DateTimeFormat("en", { year: "numeric", timeZone: settings.timezone }).format(new Date()));
   const start = settings.startYear;
   const togetherYears = start == null ? null : Math.max(0, currentYear - start);
@@ -92,7 +92,7 @@ export function Dashboard({ entries, settings, themeMediaAvailable = false, beid
         <div className="concert-year concert-year-current"><strong>{currentYear}</strong><span>故事仍在继续</span></div>
       </div>
       <div className="concert-journey-memories">
-        {journeyEntries.length > 0 ? <><p className="concert-journey-caption">时光里的坐标</p><div className="concert-year-nodes">{journeyEntries.slice(0, 3).map((entry) => <Link key={entry.id} href={`/app/journey/${entry.id}`}><span className="concert-node-dot" aria-hidden="true" /><span className="concert-memory-copy"><span>{entry.data.year === start ? "起点" : entry.data.year ?? "一段记忆"}</span><strong>{entry.title}</strong></span><ArrowUpRight size={16} /></Link>)}</div></> : <Link href="/app/journey" className="concert-first-memory"><Plus size={16} /><span>写下第一段星途记忆</span><ArrowUpRight size={16} /></Link>}
+        {journeyEntries.length > 0 ? <><p className="concert-journey-caption">时光里的坐标</p><div className="concert-year-nodes">{journeyEntries.slice(0, 3).map((entry) => <Link key={entry.id} href={`/app/journey/${entry.id}`}><span className="concert-node-dot" aria-hidden="true" /><span className="concert-memory-copy"><span>{entry.data.year === start ? "起点" : entry.data.year ?? "一段记忆"}</span><strong>{entry.title}</strong></span><ArrowUpRight size={16} /></Link>)}</div></> : <Link href="/app/journey" className="concert-first-memory"><Plus size={16} /><span>{readOnly ? "浏览星途珍藏" : "写下第一段星途记忆"}</span><ArrowUpRight size={16} /></Link>}
       </div>
       <GlassLayers />
     </section>;
@@ -120,7 +120,7 @@ export function Dashboard({ entries, settings, themeMediaAvailable = false, beid
           </Link>;
         })}
       </div> : <div className="concert-chapter-empty"><span className="concert-empty-symbol" aria-hidden="true"><Icon size={37} strokeWidth={1} /></span><p><span>等待下一份珍藏</span>{collection.empty}</p></div>}
-      <Link href={`/app/${key}`} className="concert-chapter-link">{shown.length ? collection.action : collection.first}<ArrowUpRight size={18} /></Link>
+      <Link href={`/app/${key}`} className="concert-chapter-link">{shown.length ? collection.action : readOnly ? `浏览${collection.title}` : collection.first}<ArrowUpRight size={18} /></Link>
       <GlassLayers />
     </section>;
   }
@@ -166,7 +166,7 @@ export function Dashboard({ entries, settings, themeMediaAvailable = false, beid
         <div className="concert-portrait-frame"><FanPortrait key={`${heroImage}-${mobileHeroImage}`} src={heroImage} mobileSrc={mobileHeroImage} alt={settings.heroAssetId || settings.mobileHeroAssetId ? "首页珍藏照片" : themeMediaAvailable ? "张杰与小北斗牵手走在星雨中的现场照片" : "张杰本人照片"} /></div>
         <figcaption>{settings.heroAssetId || themeMediaAvailable ? <Link href={heroImage} target="_blank" rel="noopener noreferrer" className={settings.mobileHeroAssetId ? "concert-portrait-credit concert-desktop-credit" : "concert-portrait-credit"}>查看完整照片<ArrowUpRight size={12} /></Link> : <Link href="/copyright" className={settings.mobileHeroAssetId ? "concert-portrait-credit concert-desktop-credit" : "concert-portrait-credit"}>摄影 Twinklestellar · CC BY-SA 4.0<ArrowUpRight size={12} /></Link>}{settings.mobileHeroAssetId && <Link href={mobileHeroImage} target="_blank" rel="noopener noreferrer" className="concert-portrait-credit concert-mobile-credit">查看完整照片<ArrowUpRight size={12} /></Link>}</figcaption>
       </figure>
-      <div className="concert-hero-footer"><div className="concert-since"><span>SINCE</span><strong>{start ?? "—"}</strong><span>把热爱慢慢收藏</span></div><p>歌声 · 现场 · 时光 · 我</p><Link href="/app/settings#home-visual">更换首页照片 <ArrowUpRight size={13} /></Link></div>
+      <div className="concert-hero-footer"><div className="concert-since"><span>SINCE</span><strong>{start ?? "—"}</strong><span>把热爱慢慢收藏</span></div><p>歌声 · 现场 · 时光 · 我</p>{!readOnly && <Link href="/app/settings#home-visual">更换首页照片 <ArrowUpRight size={13} /></Link>}</div>
     </section>
     <div className="concert-content">{sections}<section className="concert-letter liquid-glass"><Feather size={21} strokeWidth={1.4} /><div><p>有些话，想一直写给你。</p><span>LETTERS TO ZHANG JIE</span></div><Link href="/app/letters">打开我的信笺 <ArrowRight size={18} /></Link><GlassLayers /></section></div>
   </div>;

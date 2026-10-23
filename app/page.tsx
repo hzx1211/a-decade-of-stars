@@ -14,7 +14,9 @@ export default async function Landing() {
       <h1>张杰<span>JASON ZHANG</span></h1>
       <p className="stage-landing-motto">张杰勇敢飞，星星永相随。</p>
       <p className="stage-landing-description">从 2009 年开始。<br/>把听过的歌、看过的舞台，和自己的故事，留在这里。</p>
-      <Link href="/login" className="stage-enter">{status.setupRequired?"建立我的纪念馆":"进入我的纪念馆"}<ArrowUpRight size={19}/></Link>
+      <div className="stage-landing-actions">
+        <Link href="/login" className="stage-enter">{status.setupRequired?"建立我的纪念馆":"进入我的纪念馆"}<ArrowUpRight size={19}/></Link>
+      </div>
     </div>
     <footer className="stage-landing-footer"><span>2009 — {new Date().getFullYear()} <i/> PRIVATE COLLECTION</span></footer>
   </main>;

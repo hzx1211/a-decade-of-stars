@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, ViewTransition, type KeyboardEvent, type ReactNode, type Ref } from "react";
 import { AnimatePresence, LayoutGroup, motion, useIsPresent } from "motion/react";
-import { Search, Menu, X, ArrowUpRight, LogOut, Settings, ChevronDown, LoaderCircle } from "lucide-react";
+import { Search, Menu, X, ArrowUpRight, LogOut, LogIn, Settings, ChevronDown, LoaderCircle } from "lucide-react";
 import { VMark } from "./v-mark";
 import { GlassLayers } from "./liquid-glass-effects";
 import { StarseaBackdrop } from "./starsea-backdrop";
@@ -52,35 +52,35 @@ function CollectionLink({ href, label, path, onNavigate }: { href: string; label
   return <Link href={href} onClick={onNavigate} className={isActive(path, href) ? "active" : ""} aria-current={isActive(path, href) ? "page" : undefined}><span>{label}</span><ArrowUpRight size={14} aria-hidden="true" /></Link>;
 }
 
-function MoreNavigation({ path, onNavigate, menuRef }: { path: string; onNavigate: () => void; menuRef: Ref<HTMLDivElement> }) {
+function MoreNavigation({ path, onNavigate, menuRef, readOnly }: { path: string; onNavigate: () => void; menuRef: Ref<HTMLDivElement>; readOnly: boolean }) {
   const present = useIsPresent(), enabled = useMotionPreference();
   return <motion.div ref={menuRef} id="archive-more-navigation" className="nav-dropdown" aria-hidden={!present} inert={!present} data-motion-managed onKeyDown={navigateWithArrows}
     initial={enabled ? { opacity: 0, y: -6, scale: 0.985 } : false} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.985 }} transition={{ duration: enabled ? 0.2 : 0, ease }} data-state={present ? "open" : "closing"}>
     <div className="collection-menu-heading"><span>热爱 自成宇宙</span><span><i aria-hidden="true" /> EXPLORE YOUR UNIVERSE</span></div>
     <nav className="collection-menu-grid" aria-label="珍藏导航">{collectionGroups.map((group, index) => <div className="collection-menu-group" key={group.title}><h2><span className="collection-group-number" aria-hidden="true">0{index + 1}</span>{group.title}<small>{group.english}</small></h2>{group.items.map(([href, label]) => <CollectionLink key={href} href={href} label={label} path={path} onNavigate={onNavigate} />)}</div>)}</nav>
-    <div className="collection-menu-bottom"><span>从一束蓝光 到整片星海</span><CollectionLink href="/app/admin" label="内容管理" path={path} onNavigate={onNavigate} /></div>
+    <div className="collection-menu-bottom"><span>从一束蓝光 到整片星海</span>{!readOnly && <CollectionLink href="/app/admin" label="内容管理" path={path} onNavigate={onNavigate} />}</div>
     <GlassLayers />
   </motion.div>;
 }
 
-function MobileNavigation({ path, onNavigate, menuRef }: { path: string; onNavigate: () => void; menuRef: Ref<HTMLDivElement> }) {
+function MobileNavigation({ path, onNavigate, menuRef, readOnly }: { path: string; onNavigate: () => void; menuRef: Ref<HTMLDivElement>; readOnly: boolean }) {
   const present = useIsPresent(), enabled = useMotionPreference();
   return <motion.div ref={menuRef} className="mobile-nav-presence" aria-hidden={!present} inert={!present} data-motion-managed
     initial={enabled ? { height: 0, opacity: 0 } : false} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: enabled ? 0.25 : 0, ease }} data-state={present ? "open" : "closing"}>
     <nav id="archive-mobile-navigation" className="mobile-nav" aria-label="移动端导航" onKeyDown={navigateWithArrows}>
       <div className="mobile-primary-links">{primary.map(([href, label]) => <Link href={href} key={href} onClick={onNavigate} className={isActive(path, href) ? "active" : ""} aria-current={isActive(path, href) ? "page" : undefined}><span>{label}</span><ArrowUpRight size={15} aria-hidden="true" /><AnimatePresence initial={false}>{isActive(path, href) && <NavSelection id="mobile-navigation-selection" />}</AnimatePresence></Link>)}</div>
       <div className="mobile-collection-groups">{collectionGroups.map(group => <div className="mobile-collection-group" key={group.title}><h2>{group.title}<small>{group.english}</small></h2><div>{group.items.map(([href, label]) => <CollectionLink key={href} href={href} label={label} path={path} onNavigate={onNavigate} />)}</div></div>)}</div>
-      <div className="mobile-navigation-utilities"><CollectionLink href="/app/admin" label="内容管理" path={path} onNavigate={onNavigate} /><CollectionLink href="/app/settings" label="网站设置" path={path} onNavigate={onNavigate} /></div>
+      <div className="mobile-navigation-utilities">{readOnly ? <CollectionLink href="/login" label="所有者登录" path={path} onNavigate={onNavigate} /> : <><CollectionLink href="/app/admin" label="内容管理" path={path} onNavigate={onNavigate} /><CollectionLink href="/app/settings" label="网站设置" path={path} onNavigate={onNavigate} /></>}</div>
       <GlassLayers />
     </nav>
   </motion.div>;
 }
 
-export function Shell({ children, settings, initialEntries = [], initialAssets = [] }: { children: ReactNode; settings: SiteSettings; initialEntries?: Entry[]; initialAssets?: Asset[] }) {
-  return <MotionScope enabled={settings.animation}><MusicLibrary initialEntries={initialEntries} initialAssets={initialAssets}><ShellFrame settings={settings}>{children}</ShellFrame></MusicLibrary></MotionScope>;
+export function Shell({ children, settings, initialEntries = [], initialAssets = [], readOnly = false }: { children: ReactNode; settings: SiteSettings; initialEntries?: Entry[]; initialAssets?: Asset[]; readOnly?: boolean }) {
+  return <MotionScope enabled={settings.animation}><MusicLibrary readOnly={readOnly} initialEntries={initialEntries} initialAssets={initialAssets}><ShellFrame settings={settings} readOnly={readOnly}>{children}</ShellFrame></MusicLibrary></MotionScope>;
 }
 
-function ShellFrame({ children, settings }: { children: ReactNode; settings: SiteSettings }) {
+function ShellFrame({ children, settings, readOnly }: { children: ReactNode; settings: SiteSettings; readOnly: boolean }) {
   const path = usePathname(), router = useRouter(), navigationId = useId();
   const enabled = useMotionPreference();
   const [open, setOpen] = useState(false), [more, setMore] = useState(false), [error, setError] = useState(""), [loggingOut, setLoggingOut] = useState(false);
@@ -152,12 +152,12 @@ function ShellFrame({ children, settings }: { children: ReactNode; settings: Sit
     <StarseaBackdrop />
     <a href="#main-content" className="skip-link">跳到主要内容</a>
     <LayoutGroup id={navigationId}><ViewTransition name="archive-header" default="none"><header className="site-header archive-navigation" ref={header}><div className="nav-inner">
-      <Link href="/app/dashboard" className="wordmark stage-wordmark" onClick={closeNavigation} aria-label="张杰私人纪念馆首页"><SharedArtwork name="archive-logo"><VMark size={46} /></SharedArtwork><span>张杰<small>蓝色星海 · 私人典藏</small></span></Link>
+      <Link href="/app/dashboard" className="wordmark stage-wordmark" onClick={closeNavigation} aria-label="张杰纪念馆首页"><SharedArtwork name="archive-logo"><VMark size={46} /></SharedArtwork><span>张杰<small>{readOnly ? "蓝色星海 · 精选珍藏" : "蓝色星海 · 私人典藏"}</small></span></Link>
       <nav className="desktop-nav" aria-label="主导航">{primary.map(([href, label]) => <Link key={href} href={href} onClick={closeNavigation} className={isActive(path, href) ? "active" : ""} aria-current={isActive(path, href) ? "page" : undefined}>{label}<AnimatePresence initial={false}>{isActive(path, href) && <NavSelection id="archive-nav-indicator" />}</AnimatePresence></Link>)}
-        <div className="more-nav" ref={moreContainer}><button ref={moreToggle} onKeyDown={event => openWithKeyboard(event, "more")} onClick={event => { focusOnOpen.current = event.detail === 0 && !more ? "first" : null; setOpen(false); setMore(value => !value); }} aria-label="更多珍藏" aria-expanded={more} aria-controls="archive-more-navigation" className={secondary.some(([href]) => isActive(path, href)) ? "active" : ""}>更多珍藏 <motion.span className="nav-chevron" aria-hidden="true" animate={{ rotate: more ? 180 : 0 }} transition={{ duration: enabled ? 0.2 : 0, ease }}><ChevronDown size={13} /></motion.span><AnimatePresence initial={false}>{secondary.some(([href]) => isActive(path, href)) && <NavSelection id="archive-nav-indicator" />}</AnimatePresence></button><AnimatePresence>{more && <MoreNavigation path={path} onNavigate={closeNavigation} menuRef={moreMenu} />}</AnimatePresence></div>
+        <div className="more-nav" ref={moreContainer}><button ref={moreToggle} onKeyDown={event => openWithKeyboard(event, "more")} onClick={event => { focusOnOpen.current = event.detail === 0 && !more ? "first" : null; setOpen(false); setMore(value => !value); }} aria-label="更多珍藏" aria-expanded={more} aria-controls="archive-more-navigation" className={secondary.some(([href]) => isActive(path, href)) ? "active" : ""}>更多珍藏 <motion.span className="nav-chevron" aria-hidden="true" animate={{ rotate: more ? 180 : 0 }} transition={{ duration: enabled ? 0.2 : 0, ease }}><ChevronDown size={13} /></motion.span><AnimatePresence initial={false}>{secondary.some(([href]) => isActive(path, href)) && <NavSelection id="archive-nav-indicator" />}</AnimatePresence></button><AnimatePresence>{more && <MoreNavigation path={path} onNavigate={closeNavigation} menuRef={moreMenu} readOnly={readOnly} />}</AnimatePresence></div>
       </nav>
-      <div className="nav-actions"><Link href="/app/search" className="icon-button nav-search" aria-label="搜索珍藏" onClick={closeNavigation} aria-current={isActive(path, "/app/search") ? "page" : undefined}><Search size={18} /><span aria-hidden="true">搜索</span></Link><span className="nav-utility-rule" aria-hidden="true" /><Link href="/app/settings" className="icon-button settings-link" aria-label="网站设置" title="网站设置" onClick={closeNavigation} aria-current={isActive(path, "/app/settings") ? "page" : undefined}><Settings size={18} /></Link><button className="icon-button logout-button" onClick={() => void logout()} disabled={loggingOut} title="退出登录" aria-label={loggingOut ? "正在退出登录" : "退出登录"} aria-busy={loggingOut}><NavigationIcon changed={loggingOut} ready={<LogOut size={17} />} active={<LoaderCircle size={17} className={loggingOut ? "ws-spin" : ""} />} /></button><button ref={mobileToggle} className="icon-button mobile-toggle" onKeyDown={event => openWithKeyboard(event, "mobile")} onClick={event => { focusOnOpen.current = event.detail === 0 && !open ? "first" : null; setMore(false); setOpen(value => !value); }} aria-label={open ? "关闭菜单" : "打开菜单"} aria-expanded={open} aria-controls="archive-mobile-navigation"><NavigationIcon changed={open} ready={<Menu size={21} />} active={<X size={21} />} /></button></div>
-    </div><AnimatePresence>{open && <MobileNavigation path={path} onNavigate={closeNavigation} menuRef={mobileMenu} />}</AnimatePresence><GlassLayers /></header></ViewTransition></LayoutGroup>
+      <div className="nav-actions"><Link href="/app/search" className="icon-button nav-search" aria-label="搜索珍藏" onClick={closeNavigation} aria-current={isActive(path, "/app/search") ? "page" : undefined}><Search size={18} /><span aria-hidden="true">搜索</span></Link><span className="nav-utility-rule" aria-hidden="true" />{readOnly ? <Link href="/login" className="icon-button owner-login" aria-label="所有者登录" title="所有者登录" onClick={closeNavigation}><LogIn size={18} /><span aria-hidden="true">登录</span></Link> : <><Link href="/app/settings" className="icon-button settings-link" aria-label="网站设置" title="网站设置" onClick={closeNavigation} aria-current={isActive(path, "/app/settings") ? "page" : undefined}><Settings size={18} /></Link><button className="icon-button logout-button" onClick={() => void logout()} disabled={loggingOut} title="退出登录" aria-label={loggingOut ? "正在退出登录" : "退出登录"} aria-busy={loggingOut}><NavigationIcon changed={loggingOut} ready={<LogOut size={17} />} active={<LoaderCircle size={17} className={loggingOut ? "ws-spin" : ""} />} /></button></>}<button ref={mobileToggle} className="icon-button mobile-toggle" onKeyDown={event => openWithKeyboard(event, "mobile")} onClick={event => { focusOnOpen.current = event.detail === 0 && !open ? "first" : null; setMore(false); setOpen(value => !value); }} aria-label={open ? "关闭菜单" : "打开菜单"} aria-expanded={open} aria-controls="archive-mobile-navigation"><NavigationIcon changed={open} ready={<Menu size={21} />} active={<X size={21} />} /></button></div>
+    </div><AnimatePresence>{open && <MobileNavigation path={path} onNavigate={closeNavigation} menuRef={mobileMenu} readOnly={readOnly} />}</AnimatePresence><GlassLayers /></header></ViewTransition></LayoutGroup>
     <MotionPresence show={!!error} className="shell-error-presence"><div role="alert" className="shell-error">{error}</div></MotionPresence>
     <main id="main-content"><MotionPage>{children}</MotionPage></main><Footer startYear={settings.startYear} />
     <div className="archive-modal-layer" data-modal-root />

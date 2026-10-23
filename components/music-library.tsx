@@ -18,7 +18,7 @@ export type MusicState = {
   play: (id: string) => void; pause: () => void; toggle: () => void;
   seek: (value: number) => void; setVolume: (value: number) => void; move: (direction: number) => void;
   updateLibrary: (entries: Entry[], assets: Asset[]) => void;
-  openLyrics: (id?: string) => void;
+  openLyrics: (id?: string, readOnly?: boolean) => void;
   externalTracks?: ExternalTrack[];
   externalCurrent?: ExternalTrack;
 };
@@ -26,11 +26,12 @@ export const musicEntryUpdatedEvent = "archive:music-entry-updated";
 const Music = createContext<MusicState | null>(null);
 export function useMusicLibrary() { return useContext(Music); }
 
-export function MusicLibrary({children, initialEntries = [], initialAssets = []}: {children: ReactNode; initialEntries?: Entry[]; initialAssets?: Asset[]}) {
+export function MusicLibrary({children, initialEntries = [], initialAssets = [], readOnly = false}: {children: ReactNode; initialEntries?: Entry[]; initialAssets?: Asset[]; readOnly?: boolean}) {
   const [library, setLibrary] = useState({entries: initialEntries, assets: initialAssets});
   const [currentId, setCurrentId] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [lyricsEntryId, setLyricsEntryId] = useState<string | null>(null);
+  const [lyricsReadOnly, setLyricsReadOnly] = useState(readOnly);
   const [externalEntryId, setExternalEntryId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false), [loading, setLoading] = useState(false);
   const [time, setTime] = useState(0), [duration, setDuration] = useState(0), [volume, updateVolume] = useState(.7), [error, setError] = useState("");
@@ -108,9 +109,9 @@ export function MusicLibrary({children, initialEntries = [], initialAssets = []}
     const element = audio.current;
     if (currentId && !current && element) { ++playRequest.current; element.pause(); element.removeAttribute("src"); element.load(); }
   }, [currentId, current]);
-  function openLyrics(id = currentId || selectedId) {
+  function openLyrics(id = currentId || selectedId, viewOnly = readOnly) {
     if (externalTracks.some(track => track.entry.id === id)) { play(id); return; }
-    if (library.entries.some(entry => entry.id === id && entry.kind === "music")) setLyricsEntryId(id);
+    if (library.entries.some(entry => entry.id === id && entry.kind === "music")) {setLyricsReadOnly(viewOnly); setLyricsEntryId(id);}
   }
   function closeLyrics() {
     restoreLyricsFocus.current = true;
@@ -140,7 +141,7 @@ export function MusicLibrary({children, initialEntries = [], initialAssets = []}
     {children}
     <audio ref={audio} data-testid="global-audio" preload="metadata" onPlay={event => { for (const player of document.querySelectorAll<HTMLMediaElement>("audio,video")) if (player !== event.currentTarget) player.pause(); }} onPause={() => {setPlaying(false); setLoading(false);}} onTimeUpdate={event => setTime(event.currentTarget.currentTime)} onLoadedMetadata={event => setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : 0)} onDurationChange={event => setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : 0)} onCanPlay={() => setLoading(false)} onWaiting={() => setLoading(true)} onPlaying={() => {setLoading(false); setPlaying(true);}} onEnded={() => {setPlaying(false); setLoading(false); if (tracks.length > 1) move(1);}} onError={() => {setPlaying(false); setLoading(false); setError("音频读取失败，请检查文件或换用 MP3、WAV、OGG。");}} />
     <MusicDock music={music} onClose={close} />
-    {lyricsEntry && <LyricsPlayer entry={lyricsEntry} cover={library.assets.find(asset => asset.id === lyricsEntry.data.coverAssetId && asset.mediaType === "image")} music={music} onSave={saveLyrics} onClose={closeLyrics} />}
+    {lyricsEntry && <LyricsPlayer entry={lyricsEntry} cover={library.assets.find(asset => asset.id === lyricsEntry.data.coverAssetId && asset.mediaType === "image")} music={music} onSave={saveLyrics} onClose={closeLyrics} readOnly={lyricsReadOnly} />}
     {externalCurrent && <NeteasePlayer key={externalCurrent.entry.id} {...externalCurrent} onClose={() => setExternalEntryId(null)} />}
   </Music.Provider>;
 }

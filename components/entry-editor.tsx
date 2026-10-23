@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { ArrowDown, ArrowUp, Check, ChevronDown, FileUp, ImagePlus, Link2, LoaderCircle, Plus, RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import { kindLabels, type Asset, type Entry, type EntryData, type EntryKind, type SiteSettings } from "@/lib/types";
 import { parseNeteaseMusic } from "@/lib/netease";
+import {uploadMedia, type MediaUpload} from "@/lib/media-upload";
 import { Modal, request, errorMessage } from "./client-utils";
 import { MotionList, MotionPresence, MotionSwap, useMotionPreference } from "./motion";
 import "./simple-editor.css";
@@ -13,11 +14,11 @@ type AssetUploadState = { uploading: boolean; pending: boolean; filename?: strin
 
 export function AssetUploader({ mediaType, settings, onUploaded, onStateChange, saveTarget = "record", label = "上传素材" }: { mediaType: "image" | "audio" | "video"; settings: SiteSettings; onUploaded: (asset: Asset) => void; onStateChange?: (state: AssetUploadState) => void; saveTarget?: "record" | "settings"; label?: string }) {
   const [file, setFile] = useState<File | null>(null); const [progress, setProgress] = useState(0); const [uploading, setUploading] = useState(false); const [error, setError] = useState(""); const [success, setSuccess] = useState("");
-  const xhr = useRef<XMLHttpRequest | null>(null);
+  const xhr = useRef<MediaUpload | null>(null);
   const preview = useRef<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   useEffect(() => () => {
-    if (xhr.current) { xhr.current.onload = null; xhr.current.onerror = null; xhr.current.onabort = null; xhr.current.upload.onprogress = null; if (xhr.current.readyState !== 4) xhr.current.abort(); }
+    xhr.current?.detach();
     if (preview.current) URL.revokeObjectURL(preview.current);
   }, []);
   const limit = mediaType === "image" ? settings.imageLimitMb : mediaType === "audio" ? settings.audioLimitMb : settings.videoLimitMb;
@@ -34,26 +35,22 @@ export function AssetUploader({ mediaType, settings, onUploaded, onStateChange, 
     setError(""); setSuccess("");
     if (file.size > limit * 1024 * 1024) { setError(`文件超过当前 ${limit} MB 限制。可在设置中调整限制或保留外部链接。`); return; }
     setUploading(true); setProgress(0); onStateChange?.({ uploading: true, pending: true, filename: file.name });
-    const form = new FormData(); form.append("file", file);
-    const connection = new XMLHttpRequest(); xhr.current = connection;
-    connection.open("POST", "/api/assets"); connection.responseType = "json";
-    connection.upload.onprogress = event => { if (event.lengthComputable) setProgress(Math.round((event.loaded / event.total) * 100)); };
-    connection.onload = () => {
-      setUploading(false);
-      if (connection.status >= 200 && connection.status < 300 && connection.response?.asset) {
-        setSuccess(saveTarget === "settings" ? `${file.name} 已上传，请保存网站设置以应用图片` : `${file.name} 已上传，请保存当前记录以完成关联`); onUploaded(connection.response.asset);
-        onStateChange?.({ uploading: false, pending: false, filename: file.name });
-      } else { setError(connection.response?.error || `上传失败（${connection.status}），文件尚未关联，请重试上传。`); onStateChange?.({ uploading: false, pending: true, filename: file.name }); }
-    };
-    connection.onerror = () => { setUploading(false); setError("网络中断，文件尚未关联。请重试上传后再保存记录。"); onStateChange?.({ uploading: false, pending: true, filename: file.name }); };
-    connection.onabort = () => { setUploading(false); setError("上传已取消，文件尚未关联。可重新上传或移除所选文件。"); onStateChange?.({ uploading: false, pending: true, filename: file.name }); };
-    try { connection.send(form); } catch (failure) { setUploading(false); setError(`上传未完成：${errorMessage(failure)}`); onStateChange?.({ uploading: false, pending: true, filename: file.name }); }
+    xhr.current = uploadMedia(file, {
+      onProgress: setProgress,
+      onUploaded(asset) {
+        xhr.current = null; setUploading(false);
+        if (asset.mediaType !== mediaType) {setError("服务器识别的文件类型与当前素材类型不同，请重新选择。"); onStateChange?.({uploading: false, pending: true, filename: file.name}); return;}
+        setSuccess(saveTarget === "settings" ? `${file.name} 已上传，请保存网站设置以应用图片` : `${file.name} 已上传，请保存当前记录以完成关联`); onUploaded(asset);
+        onStateChange?.({uploading: false, pending: false, filename: file.name});
+      },
+      onError(message) {xhr.current = null; setUploading(false); setError(message); onStateChange?.({uploading: false, pending: true, filename: file.name});},
+    });
   }
   return <section className="ws-upload" aria-label={label}><div className="ws-upload-head"><FileUp size={18} /><strong>{label}</strong><span>{limit} MB 以内</span></div>
     <label className="ws-field">选择文件<input type="file" accept={accept} disabled={uploading} data-testid="upload-file" onChange={event => { const next = event.target.files?.[0]; if (next) chooseFile(next); event.target.value = ""; }} /></label>
     <MotionPresence show={!!file}><div className="simple-upload-selection"><MotionPresence show={!!previewUrl}><figure className="simple-photo-preview"><img src={previewUrl || undefined} alt={`待上传照片预览：${file?.name || ""}`} /><figcaption>{file?.name}</figcaption></figure></MotionPresence><p className="simple-upload-hint" role="status">{saveTarget === "settings" ? success ? "图片已上传，保存网站设置后即可应用。" : uploading ? "正在上传，请等待完成后保存网站设置。" : "已选择图片，尚未上传。请点击“上传文件”，再保存网站设置。" : success ? "文件已上传，点击下方“保存记录”后才会出现在当前记录中。" : uploading ? "正在上传，请等待完成后保存记录。" : "已选择文件，尚未上传。请点击“上传文件”，再保存当前记录。"}</p>{!uploading && !success && <button type="button" className="simple-text-button" onClick={() => chooseFile(null)}><X size={14} />移除所选文件</button>}</div></MotionPresence>
     <MotionPresence show={uploading}><div className="ws-upload-progress"><progress value={progress} max="100" aria-label="文件上传进度" /><span>{progress}%{progress === 100 ? " · 服务器正在校验文件…" : ""}</span></div></MotionPresence>
-    <div className="ws-actions"><button className="ws-button ws-button-secondary" type="button" onClick={upload} disabled={!file || uploading || !!success} data-testid="upload-submit"><MotionSwap motionKey={uploading ? "uploading" : error ? "retry" : "idle"} as="span" className="ws-control-copy">{uploading ? <LoaderCircle size={15} className="ws-spin" /> : error ? <RotateCcw size={15} /> : <FileUp size={15} />}{uploading ? "上传中…" : error ? "重试上传" : "上传文件"}</MotionSwap></button><MotionPresence show={uploading} as="span"><button type="button" className="ws-button ws-button-ghost" onClick={() => xhr.current?.abort()}>取消上传</button></MotionPresence></div>
+    <div className="ws-actions"><button className="ws-button ws-button-secondary" type="button" onClick={upload} disabled={!file || uploading || !!success} data-testid="upload-submit"><MotionSwap motionKey={uploading ? "uploading" : error ? "retry" : "idle"} as="span" className="ws-control-copy">{uploading ? <LoaderCircle size={15} className="ws-spin" /> : error ? <RotateCcw size={15} /> : <FileUp size={15} />}{uploading ? "上传中…" : error ? "重试上传" : "上传文件"}</MotionSwap></button><MotionPresence show={uploading} as="span"><button type="button" className="ws-button ws-button-ghost" disabled={progress === 100} onClick={() => xhr.current?.abort()}>取消上传</button></MotionPresence></div>
     <MotionPresence show={!!error}><p className="ws-error" role="alert">{error}</p></MotionPresence><MotionPresence show={!!success}><p className="ws-success" role="status"><Check size={14} />{success}</p></MotionPresence>
   </section>;
 }
@@ -71,6 +68,7 @@ export function EntryEditor({ kind, entry, initialData, entries, assets, setting
     return { datePrecision: precision, status: "saved", ...existing };
   });
   const [favorite, setFavorite] = useState(entry?.favorite || false);
+  const [isPublic, setIsPublic] = useState(entry?.isPublic === true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [uploadStates, setUploadStates] = useState<Record<string, AssetUploadState>>({});
@@ -154,7 +152,7 @@ export function EntryEditor({ kind, entry, initialData, entries, assets, setting
           savedData.sourceType = "authorized_upload";
         }
       }
-      const result = await request<{ entry: Entry }>(entry ? `/api/entries/${entry.id}` : "/api/entries", { method: entry ? "PATCH" : "POST", body: JSON.stringify({ ...(entry ? {} : { kind }), title: title.trim(), data: savedData, favorite }) });
+      const result = await request<{ entry: Entry }>(entry ? `/api/entries/${entry.id}` : "/api/entries", { method: entry ? "PATCH" : "POST", body: JSON.stringify({ ...(entry ? {} : { kind }), title: title.trim(), data: savedData, favorite, isPublic }) });
       onSaved(result.entry);
     } catch (failure) {
       setError(errorMessage(failure));
@@ -168,6 +166,7 @@ export function EntryEditor({ kind, entry, initialData, entries, assets, setting
   return <Modal closeDisabled={busy || uploading} title={`${entry ? "编辑" : "新增"}${kindLabels[kind]}`} onClose={onClose} wide><form onSubmit={submit} className={`ws-editor simple-editor ${isWriting ? "ws-editor-writing" : ""}`}>
     {kind === "photos" && <div className="simple-editor-intro"><span className="simple-editor-signal" aria-hidden="true" /><p>保存后，照片会出现在照片馆</p></div>}
     <label className="ws-field simple-field ws-title-field">标题<input value={title} onChange={event => setTitle(event.target.value)} required maxLength={200} placeholder={kind === "letters" ? "这次，想对他说什么" : kind === "journey" ? "给这一年留一个标题" : "写一个你会记得的名字"} autoFocus /></label>
+    <label className="ws-check simple-public-check"><input type="checkbox" checked={isPublic} onChange={event => setIsPublic(event.target.checked)} /><span>允许访客查看这份精选<small>默认私密；关联的照片、歌曲或视频也会随记录公开。</small></span></label>
     <div className="simple-primary-date">
       {usesYear && field("year", "年份", "可留空，例如 2009", "number")}
       {hasDate && kind !== "milestones" && dateField}

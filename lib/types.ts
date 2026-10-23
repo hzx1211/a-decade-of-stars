@@ -11,7 +11,7 @@ export type EntryData = {
   relatedIds?: string[]; featured?: boolean; verified?: boolean; featuredOrder?: number;
   status?: "draft" | "saved"; itemIds?: string[]; chapters?: string[]; scheduledDate?: string;
 };
-export type Entry = { id: string; ownerId: string; kind: EntryKind; title: string; data: EntryData; favorite: boolean; createdAt: string; updatedAt: string };
+export type Entry = { id: string; ownerId: string; kind: EntryKind; title: string; data: EntryData; favorite: boolean; isPublic?: boolean; createdAt: string; updatedAt: string };
 export type Asset = { id: string; ownerId: string; filename: string; mimeType: string; size: number; mediaType: "image" | "audio" | "video"; storagePath: string; sourceUrl?: string; rightsHolder?: string; rightsStatus: string; licenseType?: string; licenseNotes?: string; attribution?: string; allowedUseScope: string[]; createdAt: string };
 export type SiteSettings = { siteName: string; subtitle: string; startYear: number | null; animation: boolean; theme: "midnight" | "paper"; timezone: string; heroAssetId?: string; mobileHeroAssetId?: string; heroPosition: string; moduleOrder: string[]; hiddenModules: string[]; featuredIds: string[]; imageLimitMb: number; audioLimitMb: number; videoLimitMb: number };
 export const defaultSettings: SiteSettings = { siteName: "十余年星途纪念馆", subtitle: "十余年热爱，一路星光。", startYear: 2009, animation: true, theme: "midnight", timezone: "Asia/Shanghai", heroPosition: "center", moduleOrder: ["journey", "music", "videos", "photos", "journal", "concerts", "star-map"], hiddenModules: [], featuredIds: [], imageLimitMb: 10, audioLimitMb: 50, videoLimitMb: 100 };

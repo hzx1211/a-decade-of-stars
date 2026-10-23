@@ -1,6 +1,9 @@
 node_modules/
 .next/
+.vercel/
+output/
 .data/
+supabase/.temp/
 .env*
 !.env.example
 *.tsbuildinfo
@@ -13,3 +16,17 @@ verification/
 .test-data/
 .next-test*/
 verification-*.html
+# Local database files and SQLite journals
+*.sqlite
+*.sqlite3
+*.db
+*.sqlite-*
+*.sqlite3-*
+*.db-*
+# Private archive exports
+private-exports/
+private_exports/
+private-export/
+private_export/
+*-private-export*
+*.private-export.*
