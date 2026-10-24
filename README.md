@@ -18,7 +18,7 @@
 
 ## 界面截图
 
-以下截图来自线上访客可见的首页和所有者登录页，不包含私人档案内容。
+以下页面以未登录访客身份打开。所示档案项为所有者已经公开的精选；截图不包含私人笔记、未公开记录或管理操作。
 
 <table>
   <tr>
@@ -34,6 +34,44 @@
 ### 所有者登录
 
 <img src="docs/screenshots/owner-login-desktop.png" alt="私人工作区登录页面" width="100%">
+
+### 访客浏览页面
+
+<table>
+  <tr>
+    <th align="center">我的星途</th>
+    <th align="center">音乐馆</th>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/journey-desktop.png" alt="星途时间线页面" width="100%"></td>
+    <td><img src="docs/screenshots/music-desktop.png" alt="音乐馆与播放器页面" width="100%"></td>
+  </tr>
+  <tr>
+    <th align="center">照片馆</th>
+    <th align="center">综合典藏馆</th>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/photos-desktop.png" alt="照片馆页面" width="100%"></td>
+    <td><img src="docs/screenshots/archive-desktop.png" alt="综合典藏馆页面" width="100%"></td>
+  </tr>
+</table>
+
+### 追星星系
+
+<img src="docs/screenshots/star-map-desktop.png" alt="追星星系可视化页面" width="100%">
+
+### 手机端页面
+
+<table>
+  <tr>
+    <th align="center">音乐馆</th>
+    <th align="center">照片馆</th>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/music-mobile.png" alt="手机音乐馆页面" width="100%"></td>
+    <td><img src="docs/screenshots/photos-mobile.png" alt="手机照片馆页面" width="100%"></td>
+  </tr>
+</table>
 
 本地模式使用真实 SQLite 数据库和本机媒体目录；云端模式使用 Supabase Auth、PostgreSQL 与私有 Storage。首页参考所有者提供的演唱会海报和“小北斗”拼图配色，使用深海蓝、银灰、暖金；这两张参考图不在网页中展示。页面展示所有者另行提供的两张现场照片，并以指定的蓝色双片衬线 V 作为站点标志和主视觉。私人主题照片仅供所有者查看；访客主视觉在需要时使用 Twinklestellar 拍摄、以 CC BY-SA 4.0 开放许可的张杰照片作为替补。该许可照片的来源、处理与许可见 [素材署名](assets/licensed/ATTRIBUTION.md) 和网站「照片来源与版权」页。提供图片不代表网站取得了公开传播许可。网站与张杰本人、工作室、唱片公司及官方团队无隶属关系。
 
