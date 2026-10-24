@@ -2,6 +2,39 @@
 
 「张杰勇敢飞，星星永相随。」这是一个由所有者管理、可向访客展示精选内容的个人音乐、影像与记忆空间。新记录默认私人；所有者可在编辑时单独选择「公开给访客」，草稿始终不会公开。日记笔记和媒体权利证明仍为私人资料。用户已确认从 **2009 年**开始喜欢张杰；这一年仅作为可修改的星途起点，网站不会据此生成任何经历、作品或演唱会记录。
 
+## 项目简介
+
+这是一个围绕个人收藏与回忆设计的张杰纪念馆。它把歌曲、专辑、演出影像、照片、时间线和纪念册整理在同一个网站中：所有者登录后管理完整档案，也可以挑选部分非草稿内容，开放给访客只读浏览。
+
+项目支持本机 SQLite 与媒体文件目录，也支持独立配置 Supabase Auth、PostgreSQL 和私有 Storage。访客只会看到明确精选的记录及其关联媒体；日记、权利凭证、账号资料和未精选内容保留在私人工作区。
+
+- **私人管理**：登录后新增、编辑、上传、整理和备份个人档案。
+- **精选分享**：逐条发布或撤回访客可见内容，草稿不会公开。
+- **多媒体收藏**：整理歌曲、专辑、照片、视频、演唱会与个人时间线。
+- **本地或云端**：本地使用 SQLite；云端可接入 Supabase，媒体存储桶保持私有。
+- **响应式浏览**：为桌面和手机提供适配的页面与播放器。
+
+在线访客入口：[打开纪念馆](https://a-decade-of-stars.vercel.app)。
+
+## 界面截图
+
+以下截图来自线上访客可见的首页和所有者登录页，不包含私人档案内容。
+
+<table>
+  <tr>
+    <th align="center">访客首页 · 桌面</th>
+    <th align="center">访客首页 · 手机</th>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/home-desktop.png" alt="纪念馆桌面首页" width="100%"></td>
+    <td><img src="docs/screenshots/home-mobile.png" alt="纪念馆手机首页" width="320"></td>
+  </tr>
+</table>
+
+### 所有者登录
+
+<img src="docs/screenshots/owner-login-desktop.png" alt="私人工作区登录页面" width="100%">
+
 本地模式使用真实 SQLite 数据库和本机媒体目录；云端模式使用 Supabase Auth、PostgreSQL 与私有 Storage。首页参考所有者提供的演唱会海报和“小北斗”拼图配色，使用深海蓝、银灰、暖金；这两张参考图不在网页中展示。页面展示所有者另行提供的两张现场照片，并以指定的蓝色双片衬线 V 作为站点标志和主视觉。私人主题照片仅供所有者查看；访客主视觉在需要时使用 Twinklestellar 拍摄、以 CC BY-SA 4.0 开放许可的张杰照片作为替补。该许可照片的来源、处理与许可见 [素材署名](assets/licensed/ATTRIBUTION.md) 和网站「照片来源与版权」页。提供图片不代表网站取得了公开传播许可。网站与张杰本人、工作室、唱片公司及官方团队无隶属关系。
 
 ## 运行
@@ -52,3 +85,7 @@ Next.js App Router、React、TypeScript、Zod、Lucide；本地通过服务端 `
 云端部署要求 Node.js 22.13+（Vercel 可选择 Node.js 24），并设置 `DATA_MODE=supabase`、`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`、服务端 `SUPABASE_OWNER_ID`、`PUBLIC_MEDIA_READ_TOKEN`、规范 HTTPS `APP_ORIGIN` 和不超过 50 MB 的 `CLOUD_UPLOAD_LIMIT_MB`。`PUBLIC_MEDIA_READ_TOKEN` 是服务端私密值，至少 32 字节随机熵；Supabase 只保存其 SHA-256 摘要。运行应用不需要 `service_role`。按时间顺序应用 `supabase/migrations/` 全部八份迁移；数据库仍只允许唯一所有者账号，访客精选由受限只读投影提供。访客只能读取所有者明确公开且非草稿的记录和这些记录直接引用的媒体。新记录默认私人；私密笔记、权利证明、所有者标识、原文件名与存储路径不会公开。Vercel 不会自动应用数据库迁移，也不会自动搬运本地 SQLite、JSON 备份或媒体文件；详见 [部署](docs/DEPLOYMENT.md)。没有有效 Supabase 凭证时，不把本地或模拟 PostgreSQL 测试称为云端验证。
 
 文档：[数据模型](docs/DATA_MODEL.md) · [安全](docs/SECURITY.md) · [媒体上传](docs/MEDIA_UPLOAD.md) · [素材权利](docs/CONTENT_RIGHTS.md) · [部署](docs/DEPLOYMENT.md) · [备份恢复](docs/BACKUP_RESTORE.md) · [测试](docs/TESTING.md)。
+
+## 许可证
+
+仓库目前没有为源代码指定开源许可证；公开仓库便于查看项目实现，但不代表其他人已获得复制、修改或再发布源代码的授权。仓库内第三方图片等素材各自遵循对应许可，详见 [素材署名](assets/licensed/ATTRIBUTION.md)。
